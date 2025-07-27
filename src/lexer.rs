@@ -118,7 +118,7 @@ impl TokenType {
 
             Self::Number(n) => format!("{n}"),
             Self::String(str) => "\"".to_string() + &db.get_interned_string(str).unwrap() + "\"",
-            
+
             Self::Lf => "<LINE FEED>".to_string(),
             Self::Comment => "<COMMENT>".to_string(),
 
@@ -156,7 +156,8 @@ impl TokenType {
             Self::Func => "<FUNC>".to_string(),
             Self::True => "<TRUE>".to_string(),
             Self::False => "<FALSE>".to_string(),
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
@@ -244,8 +245,9 @@ impl<'db> Iterator for Lexer<'db> {
             '*' if self.peek_char() == Some('=') => {
                 self.next_char();
                 Some(self.build_token(TokenType::StarEq))
-            },
-            '/' if self.peek_char() == Some('/') => { // Comment
+            }
+            '/' if self.peek_char() == Some('/') => {
+                // Comment
                 while let Some(c) = self.peek_char() {
                     if c == '\n' {
                         break;
@@ -276,13 +278,9 @@ impl<'db> Iterator for Lexer<'db> {
                 Some(self.build_token(TokenType::DoubleEq))
             }
             '<' if self.peek_char() != Some('=') => Some(self.build_token(TokenType::OpenAngle)),
-            '<' if self.peek_char() == Some('=') => {
-                Some(self.build_token(TokenType::LessEq))
-            }
+            '<' if self.peek_char() == Some('=') => Some(self.build_token(TokenType::LessEq)),
             '>' if self.peek_char() != Some('=') => Some(self.build_token(TokenType::CloseAngle)),
-            '>' if self.peek_char() == Some('=') => {
-                Some(self.build_token(TokenType::GreaterEq))
-            }
+            '>' if self.peek_char() == Some('=') => Some(self.build_token(TokenType::GreaterEq)),
 
             '&' if self.peek_char() == Some('=') => {
                 self.next_char();
@@ -354,15 +352,9 @@ impl<'db> Iterator for Lexer<'db> {
                     self.next_char();
                 }
                 match ident.as_str() {
-                    "func" => {
-                        Some(self.build_token(TokenType::Func))
-                    }
-                    "true" => {
-                        Some(self.build_token(TokenType::True))
-                    }
-                    "false" => {
-                        Some(self.build_token(TokenType::False))
-                    }
+                    "func" => Some(self.build_token(TokenType::Func)),
+                    "true" => Some(self.build_token(TokenType::True)),
+                    "false" => Some(self.build_token(TokenType::False)),
                     _ => {
                         let interned = self.db.intern_string(ident);
                         Some(self.build_token(TokenType::Ident(interned)))
