@@ -1,0 +1,6 @@
+identifier () [] {} <> 5.3e23 "this is a string."   
+// This is a comment. This file is to test the lexer's abillity.
+, ! + += - -= * *= / /= % %= =
+== != >= <=
+! && || & &= | |= ^ ^= ~
+func true false
