@@ -1,6 +1,10 @@
-use std::str::Chars;
+use std::{
+    ops::Range,
+    str::{Chars, FromStr},
+};
 
 use codespan_reporting::diagnostic::Diagnostic;
+use ordered_float::OrderedFloat;
 use peek_again::{Peekable, PeekableIterator};
 
 use crate::{
@@ -26,7 +30,9 @@ fn _lex(db: &QueryDb, file: File) -> Vec<Token> {
     lexer.collect()
 }
 
-#[derive(Clone, Debug)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Serialize, Deserialize, Hash)]
 pub struct Token {
     pub t_type: TokenType,
     pub span: Span,
@@ -38,7 +44,7 @@ impl Token {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, Hash)]
 pub enum TokenType {
     Ident(u64),
 
@@ -54,7 +60,7 @@ pub enum TokenType {
 
     // Literals
     String(u64),
-    Number(f64),
+    Number(OrderedFloat<f64>),
 
     // Special
     Lf,
@@ -62,6 +68,8 @@ pub enum TokenType {
 
     // Symbols
     Comma,
+    Dot,
+    Semicolon,
 
     // Arithmetic operators, and assignment operators
     Plus,
@@ -97,9 +105,13 @@ pub enum TokenType {
     Tilde, // ~: NOT
 
     // Keywords
-    Func,
+    Fn,
     True,
     False,
+    Identifier,
+    Const,
+    Var,
+    Void,
 }
 
 impl TokenType {
@@ -123,6 +135,8 @@ impl TokenType {
             Self::Comment => "<COMMENT>".to_string(),
 
             Self::Comma => ",".to_string(),
+            Self::Dot => ".".to_string(),
+            Self::Semicolon => ";".to_string(),
 
             Self::Plus => "+".to_string(),
             Self::PlusEq => "+=".to_string(),
@@ -153,11 +167,14 @@ impl TokenType {
             Self::CarotEq => "^=".to_string(),
             Self::Tilde => "~".to_string(),
 
-            Self::Func => "<FUNC>".to_string(),
+            Self::Fn => "<FN>".to_string(),
             Self::True => "<TRUE>".to_string(),
             Self::False => "<FALSE>".to_string(),
+            Self::Const => "<CONST>".to_string(),
+            Self::Var => "<VAR>".to_string(),
+            Self::Identifier => "<IDENTIFIER>".to_string(),
+            Self::Void => "<VOID>".to_string(),
         }
-        .to_string()
     }
 }
 
@@ -181,8 +198,11 @@ impl<'db> Lexer<'db> {
 
     #[inline(always)]
     fn next_char(&mut self) -> Option<char> {
-        self.span.grow_front(1);
-        self.src.next()
+        let char = self.src.next();
+        if let Some(c) = char {
+            self.span.grow_front(c.len_utf8()); // `Span` works by bytes, so adjust the span by the length of the character in bytes.
+        }
+        char
     }
 
     #[inline(always)]
@@ -229,7 +249,10 @@ impl<'db> Iterator for Lexer<'db> {
             ']' => Some(self.build_token(TokenType::CloseBracket)),
             '{' => Some(self.build_token(TokenType::OpenBrace)),
             '}' => Some(self.build_token(TokenType::CloseBrace)),
+
             ',' => Some(self.build_token(TokenType::Comma)),
+            '.' => Some(self.build_token(TokenType::Dot)),
+            ';' => Some(self.build_token(TokenType::Semicolon)),
 
             '+' if self.peek_char() != Some('=') => Some(self.build_token(TokenType::Plus)),
             '+' if self.peek_char() == Some('=') => {
@@ -306,16 +329,20 @@ impl<'db> Iterator for Lexer<'db> {
             '^' if self.peek_char() != Some('=') => Some(self.build_token(TokenType::Carot)),
             '~' => Some(self.build_token(TokenType::Tilde)),
             '"' => {
-                let mut ident = String::new();
                 while let Some(c) = self.peek_char() {
-                    if c != '"' {
-                        ident.push(c);
-                    } else {
+                    if c == '"' {
                         break;
                     }
                     self.next_char();
                 }
                 self.next_char();
+
+                let contents = self.file.contents(self.db);
+                let mut range: Range<usize> = self.span.into();
+                range.end -= 1; // Remove quotes
+                range.start += 1;
+
+                let ident = String::from_str(&contents[range]).unwrap(); // to_string() doesn't take advantage of the size, so this is more optimized
                 let interned = self.db.intern_string(ident);
                 Some(self.build_token(TokenType::String(interned)))
             }
@@ -330,7 +357,7 @@ impl<'db> Iterator for Lexer<'db> {
                     self.next_char();
                 }
 
-                let res = ident.parse::<f64>();
+                let res = ident.parse::<OrderedFloat<f64>>();
                 if let Ok(n) = res {
                     Some(self.build_token(TokenType::Number(n)))
                 } else {
@@ -342,19 +369,27 @@ impl<'db> Iterator for Lexer<'db> {
                 }
             }
             c if c.is_alphabetic() || c == '_' => {
-                let mut ident = String::from(c);
                 while let Some(c) = self.peek_char() {
                     if c.is_alphanumeric() || c == '_' {
-                        ident.push(c);
+                        //ident.push(c);
                     } else {
                         break;
                     }
                     self.next_char();
                 }
+
+                let contents = self.file.contents(self.db);
+                let range: Range<usize> = self.span.into();
+
+                let ident = String::from_str(&contents[range]).unwrap(); // to_string() doesn't take advantage of the size, so this is more optimized
                 match ident.as_str() {
-                    "func" => Some(self.build_token(TokenType::Func)),
+                    "fn" => Some(self.build_token(TokenType::Fn)),
                     "true" => Some(self.build_token(TokenType::True)),
                     "false" => Some(self.build_token(TokenType::False)),
+                    "identifier" => Some(self.build_token(TokenType::Identifier)),
+                    "const" => Some(self.build_token(TokenType::Const)),
+                    "var" => Some(self.build_token(TokenType::Var)),
+                    "void" => Some(self.build_token(TokenType::Void)),
                     _ => {
                         let interned = self.db.intern_string(ident);
                         Some(self.build_token(TokenType::Ident(interned)))

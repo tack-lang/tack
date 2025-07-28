@@ -1,20 +1,22 @@
 use std::{cmp::Ordering, ops::Range};
 
+use serde::{Deserialize, Serialize};
+
 /// The `Span` type represents an area of a file.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub struct Span {
     pub start: usize,
     pub end: usize,
 }
 
 impl Span {
-    /// Creates a new `Span`. This span will start and end at the 0th character, making it have a length of zero.
+    /// Creates a new `Span`. This span will start and end at the 0th byte, making it have a length of zero.
     #[inline(always)]
     pub fn new() -> Self {
         Self::new_from(0, 0)
     }
 
-    /// Creates a new `Span` from a pair of start and end indexes. These indexes are indexes into a string by `char`s.
+    /// Creates a new `Span` from a pair of start and end indexes. These indexes are indexes into a string by bytes.
     #[inline(always)]
     pub fn new_from(start: usize, end: usize) -> Self {
         Span { start, end }

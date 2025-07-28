@@ -7,16 +7,22 @@ use codespan_reporting::files;
 
 use crate::query::{QueryAccess, QueryDb};
 
-#[derive(Clone, Copy)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct File {
     hash: u64,
 }
 
 impl File {
     /// Creates a new [`File`], with the given contents.
+    ///
+    /// # Panics
+    /// This function will panic if the path is invalid.
     pub fn new(db: &QueryDb, contents: String, path: PathBuf) -> File {
+        let path = path.canonicalize().unwrap();
         let mut hasher = DefaultHasher::new();
-        contents.hash(&mut hasher);
+        path.hash(&mut hasher);
         let hash = hasher.finish();
         let file = File { hash };
         let line_starts = files::line_starts(&contents).collect();
