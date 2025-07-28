@@ -1,20 +1,6 @@
-identifier tack.hello_world
-
-fn void start() {
-    const [string] components = ["Hello, ", "World!"];
-    print!(components);
-    println()
-}
-
-identifier tack.variables
-
-fn void start() {
-    var i32 x = 5;
-    const i32 y = 7;
-    
-    print(x); // Outputs "5"
-    x = 9;
-    print(x); // Outputs "9"
-    print(y); // Objects "7"
-    y = 2; // ERROR: cannot re-assign value to constant
-}
+identifier () [] {} <> 5.3e23 "this is a string."   
+// This is a comment. This file is to test the lexer's abillity.
+, ! + += - -= * *= / /= % %= =
+== != >= <=
+! && || & &= | |= ^ ^= ~
+func true false

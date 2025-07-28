@@ -1,5 +1,3 @@
-mod serde;
-
 use std::{
     collections::{HashMap, hash_map::Entry},
     fmt::Display,
@@ -16,30 +14,23 @@ use codespan_reporting::{
         termcolor::{ColorChoice, StandardStream},
     },
 };
-use log::trace;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 
 use crate::{
-    diag::DiagExt,
     file::{File, InternFile},
     lexer::Token,
 };
 
 #[derive(Default)]
 /// This struct is very large, so it is reccommended that you build it on the heap instead of the stack.
-/// If the struct is dropped before calling [`QueryDb::emit_diags`], it will be called when the struct is dropped.
 pub struct QueryDb {
-    /// The results of lexing files.
+    /// [crate::lexer::lex]
     lex: RwLock<HashMap<File, Vec<Token>>>,
 
-    /// Interned strings.
-    /// These are serialized because if they weren't, the [`Vec<Token>`] from `lex` would be pointing to invalid strings.
-    strings: RwLock<HashMap<u64, String>>,
-
-    // -------- NON-SERIALIZED ITEMS ----------
     /// File contents
     files: RwLock<HashMap<File, InternFile>>,
-
+    /// Interned strings
+    strings: RwLock<HashMap<u64, String>>,
     /// Error diagnostic messages
     error: RwLock<Vec<Diagnostic<File>>>,
     /// Warning diagnostic messages
@@ -48,19 +39,6 @@ pub struct QueryDb {
     info: RwLock<Vec<Diagnostic<File>>>,
     /// Bug diagnostic messages
     bug: RwLock<Vec<Diagnostic<File>>>,
-}
-
-impl Drop for QueryDb {
-    fn drop(&mut self) {
-        let res = self.emit_diags();
-        #[cfg(debug_assertions)]
-        if res {
-            Diagnostic::bug()
-                .with_message("Note to tack library user: please call `QueryDb::emit_diags` before dropping QueryDb.")
-                .emit(self);
-            self.emit_diags();
-        }
-    }
 }
 
 impl QueryDb {
@@ -94,16 +72,9 @@ impl QueryDb {
     /// If there is no value, this function will return [`None`].
     #[inline(always)]
     pub fn try_lex(&self, key: &File) -> Option<QueryAccess<'_, [Token]>> {
-        let res = Self::try_get(&self.lex, key)
+        Self::try_get(&self.lex, key)
             .map(|x| MappedRwLockReadGuard::map(x.inner, |x: &Vec<Token>| x.as_slice()))
-            .map(QueryAccess::new);
-        #[cfg(debug_assertions)]
-        if res.is_none() {
-            trace!("lex cache miss: {}", key.path(self));
-        } else {
-            trace!("lex cache hit: {}", key.path(self));
-        }
-        res
+            .map(QueryAccess::new)
     }
 
     /// Inserts a key-value pair into the `lex` map, as long as there is not an existing value.
@@ -283,12 +254,6 @@ impl<'db, T: ?Sized> Deref for QueryAccess<'db, T> {
 impl<'db> Display for QueryAccess<'db, Path> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.display())
-    }
-}
-
-impl<'db> Display for QueryAccess<'db, str> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", &**self)
     }
 }
 
