@@ -7,12 +7,7 @@ use codespan_reporting::diagnostic::Diagnostic;
 use ordered_float::OrderedFloat;
 use peek_again::{Peekable, PeekableIterator};
 
-use crate::{
-    diag::DiagExt,
-    file::File,
-    query::{QueryAccess, QueryDb},
-    span::Span,
-};
+use crate::{diag::DiagExt, file::File, query::QueryDb, span::Span};
 
 pub(crate) fn _lex(db: &QueryDb, file: File) -> Vec<Token> {
     let contents = db.contents(file);

@@ -175,7 +175,10 @@ impl QueryDb {
     }
 
     pub fn get_interned_string(&self, id: u64) -> Option<QueryAccess<'_, str>> {
-        Self::try_get(&self.strings, &id).map(|x| QueryAccess::map(x, |x| x.as_str()))
+        self.push_dep(Query::String(id));
+        let str = Self::try_get(&self.strings, &id).map(|x| QueryAccess::map(x, |x| x.as_str()));
+        self.pop_dep();
+        str
     }
 
     /// Pushes an error to the list of errors.
