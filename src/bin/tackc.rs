@@ -1,7 +1,7 @@
 use std::{fs, io, path::PathBuf};
 
 use clap::Parser;
-use tack::{file::File, lexer::lex, query::QueryDb};
+use tack::{file::File, query::QueryDb};
 
 #[derive(Parser)]
 struct Args {
@@ -24,7 +24,7 @@ fn secondary() -> io::Result<()> {
     let contents = fs::read_to_string(&path)?;
 
     let example_file = File::new(&db, contents, path);
-    let tokens = lex(&db, example_file);
+    let tokens = db.lex(example_file);
     if db.emit_diags() {
         return Ok(());
     }
@@ -32,6 +32,8 @@ fn secondary() -> io::Result<()> {
     for i in &*tokens {
         println!("{}", i.display(&db));
     }
+
+    db.debug_dep_graph();
 
     Ok(())
 }

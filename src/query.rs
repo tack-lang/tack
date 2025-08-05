@@ -6,6 +6,8 @@ use std::{
     path::Path,
 };
 
+mod dep_graph;
+
 use codespan_reporting::{
     diagnostic::Diagnostic,
     files::Files,
@@ -17,8 +19,7 @@ use codespan_reporting::{
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 
 use crate::{
-    file::{File, InternFile},
-    lexer::Token, utils::Shared,
+    file::{File, InternFile}, lexer::Token, query::dep_graph::{Node, Query}, utils::Shared
 };
 
 #[derive(Default)]
@@ -26,6 +27,9 @@ use crate::{
 pub struct QueryDb {
     /// [crate::lexer::lex]
     lex: RwLock<HashMap<File, Shared<Vec<Token>>>>,
+
+    dep_graph: RwLock<Vec<Node>>,
+    dep_stack: RwLock<Vec<Node>>,
 
     /// File contents
     files: RwLock<HashMap<File, Shared<InternFile>>>,
@@ -44,6 +48,23 @@ pub struct QueryDb {
 }
 
 impl QueryDb {
+    fn pop_dep(&self) {
+        let mut stack_lock = self.dep_stack.write();
+        let mut graph_lock = self.dep_graph.write();
+
+        let node = stack_lock.pop().expect("No dependency to pop");
+        if let Some(last) = stack_lock.last_mut() {
+            last.deps.push(node);
+        } else {
+            graph_lock.push(node);
+        }
+    }
+
+    fn push_dep(&self, query: Query) {
+        let mut stack_lock = self.dep_stack.write();
+        stack_lock.push(Node { query, deps: Vec::new() });
+    }
+
     /// Attempts to retrieve a value from the given map, based on the key.
     /// If there is no value, this function will return [`None`].
     fn try_get<'db, K: Eq + Hash, V>(
@@ -70,11 +91,25 @@ impl QueryDb {
         }
     }
 
+    pub fn lex(&self, file: File) -> QueryAccess<'_, [Token]> {
+        if let Some(tokens) = self.try_lex(file) {
+            return tokens;
+        }
+
+        self.push_dep(Query::Lex(file));
+        let tokens = crate::lexer::_lex(self, file);
+        self.pop_dep();
+
+        assert!(self.insert_lex(file, tokens.clone()).is_none());
+
+        self.try_lex(file).unwrap()
+    }
+
     /// Attempts to retrieve a value from the `lex` map, based on the key.
     /// If there is no value, this function will return [`None`].
     #[inline(always)]
-    pub fn try_lex(&self, key: &File) -> Option<QueryAccess<'_, [Token]>> {
-        Self::try_get(&self.lex, key)
+    pub fn try_lex(&self, key: File) -> Option<QueryAccess<'_, [Token]>> {
+        Self::try_get(&self.lex, &key)
             .map(|x| MappedRwLockReadGuard::map(x.inner, |x: &Shared<Vec<Token>>| x.as_slice()))
             .map(QueryAccess::new)
     }
@@ -82,15 +117,15 @@ impl QueryDb {
     /// Inserts a key-value pair into the `lex` map, as long as there is not an existing value.
     /// If a value is already there, this function will do nothing, and return `Some(val)`.
     #[inline(always)]
-    pub fn insert_lex(&self, key: File, val: Vec<Token>) -> Option<Vec<Token>> {
+    fn insert_lex(&self, key: File, val: Vec<Token>) -> Option<Vec<Token>> {
         Self::insert(&self.lex, key, val)
     }
 
     /// Attempts to retrieve a value from the `file` map, based on the key.
     /// If there is no value, this function will return [`None`].
     #[inline(always)]
-    pub fn try_file(&self, key: &File) -> Option<QueryAccess<'_, Shared<InternFile>>> {
-        Self::try_get(&self.files, key)
+    fn try_file(&self, key: File) -> Option<QueryAccess<'_, Shared<InternFile>>> {
+        Self::try_get(&self.files, &key)
     }
 
     /// Inserts a key-value pair into the `file` map, as long as there is not an existing value.
@@ -98,6 +133,30 @@ impl QueryDb {
     #[inline(always)]
     pub fn insert_file(&self, key: File, val: InternFile) -> Option<InternFile> {
         Self::insert(&self.files, key, val)
+    }
+
+    pub fn contents<'db>(&'db self, file: File) -> QueryAccess<'db, str> {
+        self.push_dep(Query::Contents(file));
+        // If None, that means that this would be an incorrectly built file.
+        let res = QueryAccess::map(self.try_file(file).unwrap(), |x| x.contents.as_str());
+        self.pop_dep();
+        res
+    }
+
+    pub fn path<'db>(&'db self, file: File) -> QueryAccess<'db, Path> {
+        self.push_dep(Query::Path(file));
+        // If None, that means that this would be an incorrectly built file.
+        let res = QueryAccess::map(self.try_file(file).unwrap(), |x| x.path.as_path());
+        self.pop_dep();
+        res
+    }
+
+    pub fn line_starts<'db>(&'db self, file: File) -> QueryAccess<'db, [usize]> {
+        self.push_dep(Query::LineStarts(file));
+        // If None, that means that this would be an incorrectly built file.
+        let res = QueryAccess::map(self.try_file(file).unwrap(), |x| x.line_starts.as_slice());
+        self.pop_dep();
+        res
     }
 
     /// Interns a new string and returns the interned ID.
@@ -173,6 +232,13 @@ impl QueryDb {
         }
         ret
     }
+
+    pub fn debug_dep_graph(&self) {
+        let graph_lock = self.dep_graph.read();
+        for node in graph_lock.iter() {
+            println!("{node:?}");
+        }
+    }
 }
 
 impl<'db> Files<'db> for QueryDb {
@@ -181,14 +247,14 @@ impl<'db> Files<'db> for QueryDb {
     type Source = QueryAccess<'db, str>;
 
     fn name(&'db self, id: Self::FileId) -> Result<Self::Name, codespan_reporting::files::Error> {
-        Ok(id.path(self))
+        Ok(self.path(id))
     }
 
     fn source(
         &'db self,
         id: Self::FileId,
     ) -> Result<Self::Source, codespan_reporting::files::Error> {
-        Ok(id.contents(self))
+        Ok(self.contents(id))
     }
 
     fn line_index(
@@ -196,8 +262,8 @@ impl<'db> Files<'db> for QueryDb {
         id: Self::FileId,
         byte_index: usize,
     ) -> Result<usize, codespan_reporting::files::Error> {
-        Ok(id
-            .line_starts(self)
+        Ok(self
+            .line_starts(id)
             .binary_search(&byte_index)
             .unwrap_or_else(|next_line| next_line - 1))
     }
