@@ -19,7 +19,10 @@ use codespan_reporting::{
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 
 use crate::{
-    file::{File, InternFile}, lexer::Token, query::dep_graph::{Node, Query}, utils::Shared
+    file::{File, InternFile},
+    lexer::Token,
+    query::dep_graph::{Node, Query},
+    utils::Shared,
 };
 
 #[derive(Default)]
@@ -35,7 +38,6 @@ pub struct QueryDb {
     files: RwLock<HashMap<File, Shared<InternFile>>>,
     /// Interned strings
     strings: RwLock<HashMap<u64, Shared<String>>>,
-
 
     /// Error diagnostic messages
     error: RwLock<Vec<Diagnostic<File>>>,
@@ -62,7 +64,10 @@ impl QueryDb {
 
     fn push_dep(&self, query: Query) {
         let mut stack_lock = self.dep_stack.write();
-        stack_lock.push(Node { query, deps: Vec::new() });
+        stack_lock.push(Node {
+            query,
+            deps: Vec::new(),
+        });
     }
 
     /// Attempts to retrieve a value from the given map, based on the key.
