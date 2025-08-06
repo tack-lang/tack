@@ -1,2 +1,4 @@
 /target
 db.bin
+.DS_Store
+profile.json.gz
