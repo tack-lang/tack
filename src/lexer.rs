@@ -14,8 +14,18 @@ use crate::{
     span::Span,
 };
 
-pub(crate) fn _lex(db: &QueryDb, file: File) -> Vec<Token> {
-    let contents = db.contents(file);
+pub fn lex<'db>(db: &'db QueryDb, file: File) -> QueryAccess<'db, [Token]> {
+    if let Some(tokens) = db.try_lex(&file) {
+        return tokens;
+    }
+
+    let res = _lex(db, file);
+    assert!(db.insert_lex(file, res).is_none()); // Should be None, it's guaranteed that there isn't another query result, since we just checked whether there was one
+    db.try_lex(&file).unwrap() // Won't panic, guaranteed that there IS another query result, since we just added one
+}
+
+fn _lex(db: &QueryDb, file: File) -> Vec<Token> {
+    let contents = file.contents(db);
     let lexer = Lexer::new(db, &contents, file);
     lexer.collect()
 }
@@ -170,7 +180,6 @@ struct Lexer<'db> {
     db: &'db QueryDb,
     file: File,
     src: Peekable<Chars<'db>>,
-    og_src: &'db str,
     span: Span,
 }
 
@@ -180,7 +189,6 @@ impl<'db> Lexer<'db> {
         Lexer {
             file,
             db,
-            og_src: src,
             src: src.chars().peek_again(),
             span: Span::new(),
         }
@@ -327,7 +335,7 @@ impl<'db> Iterator for Lexer<'db> {
                 }
                 self.next_char();
 
-                let contents = self.og_src;
+                let contents = self.file.contents(self.db);
                 let mut range: Range<usize> = self.span.into();
                 range.end -= 1; // Remove quotes
                 range.start += 1;
@@ -368,7 +376,7 @@ impl<'db> Iterator for Lexer<'db> {
                     self.next_char();
                 }
 
-                let contents = self.og_src;
+                let contents = self.file.contents(self.db);
                 let range: Range<usize> = self.span.into();
 
                 let ident = String::from_str(&contents[range]).unwrap(); // to_string() doesn't take advantage of the size, so this is more optimized

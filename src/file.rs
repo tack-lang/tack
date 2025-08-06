@@ -7,7 +7,7 @@ use codespan_reporting::files;
 
 use crate::query::{QueryAccess, QueryDb};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct File {
     hash: u64,
 }
@@ -32,6 +32,21 @@ impl File {
         file
     }
 
+    pub fn contents<'db>(&self, db: &'db QueryDb) -> QueryAccess<'db, str> {
+        // If None, that means that this would be an incorrectly built file.
+        QueryAccess::map(db.try_file(self).unwrap(), |x| x.contents.as_str())
+    }
+
+    pub fn path<'db>(&self, db: &'db QueryDb) -> QueryAccess<'db, Path> {
+        // If None, that means that this would be an incorrectly built file.
+        QueryAccess::map(db.try_file(self).unwrap(), |x| x.path.as_path())
+    }
+
+    pub fn line_starts<'db>(&self, db: &'db QueryDb) -> QueryAccess<'db, [usize]> {
+        // If None, that means that this would be an incorrectly built file.
+        QueryAccess::map(db.try_file(self).unwrap(), |x| x.line_starts.as_slice())
+    }
+
     /// Return the starting byte index of the line with the specified line index.
     /// Convenience method that already generates errors if necessary.
     pub(crate) fn line_start(
@@ -40,19 +55,18 @@ impl File {
         line_index: usize,
     ) -> Result<usize, files::Error> {
         use core::cmp::Ordering;
+        let lock = db.try_file(self).unwrap();
 
-        let line_starts = db.line_starts(*self);
-        let contents = db.contents(*self);
-
-        match line_index.cmp(&line_starts.len()) {
-            Ordering::Less => Ok(line_starts
+        match line_index.cmp(&lock.line_starts.len()) {
+            Ordering::Less => Ok(lock
+                .line_starts
                 .get(line_index)
                 .cloned()
                 .expect("failed despite previous check")),
-            Ordering::Equal => Ok(contents.len()),
+            Ordering::Equal => Ok(lock.contents.as_str().len()),
             Ordering::Greater => Err(files::Error::LineTooLarge {
                 given: line_index,
-                max: line_starts.len() - 1,
+                max: lock.line_starts.len() - 1,
             }),
         }
     }
@@ -75,7 +89,7 @@ impl PartialEq for File {
 impl Eq for File {}
 
 pub struct InternFile {
-    pub(crate) contents: String,
-    pub(crate) path: PathBuf,
-    pub(crate) line_starts: Vec<usize>,
+    contents: String,
+    path: PathBuf,
+    line_starts: Vec<usize>,
 }
