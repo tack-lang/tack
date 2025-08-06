@@ -5,7 +5,7 @@ use std::{
 
 use codespan_reporting::files;
 
-use crate::query::{QueryAccess, QueryDb};
+use crate::db::{QueryAccess, QueryDb};
 
 #[derive(Clone, Copy)]
 pub struct File {

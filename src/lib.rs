@@ -1,6 +1,5 @@
 pub mod diag;
 pub mod file;
 pub mod lexer;
-pub mod query;
+pub mod db;
 pub mod span;
-pub mod utils;

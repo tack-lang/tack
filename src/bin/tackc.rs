@@ -1,7 +1,7 @@
 use std::{fs, io, path::PathBuf};
 
 use clap::Parser;
-use tack::{file::File, lexer::lex, query::QueryDb};
+use tack::{file::File, lexer::lex, db::QueryDb};
 
 #[derive(Parser)]
 struct Args {

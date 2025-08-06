@@ -10,21 +10,11 @@ use peek_again::{Peekable, PeekableIterator};
 use crate::{
     diag::DiagExt,
     file::File,
-    query::{QueryAccess, QueryDb},
+    db::QueryDb,
     span::Span,
 };
 
-pub fn lex<'db>(db: &'db QueryDb, file: File) -> QueryAccess<'db, [Token]> {
-    if let Some(tokens) = db.try_lex(&file) {
-        return tokens;
-    }
-
-    let res = _lex(db, file);
-    assert!(db.insert_lex(file, res).is_none()); // Should be None, it's guaranteed that there isn't another query result, since we just checked whether there was one
-    db.try_lex(&file).unwrap() // Won't panic, guaranteed that there IS another query result, since we just added one
-}
-
-fn _lex(db: &QueryDb, file: File) -> Vec<Token> {
+pub fn lex(db: &QueryDb, file: File) -> Vec<Token> {
     let contents = file.contents(db);
     let lexer = Lexer::new(db, &contents, file);
     lexer.collect()
@@ -68,6 +58,7 @@ pub enum TokenType {
     Comma,
     Dot,
     Semicolon,
+    Colon,
 
     // Arithmetic operators, and assignment operators
     Plus,
@@ -135,6 +126,7 @@ impl TokenType {
             Self::Comma => ",".to_string(),
             Self::Dot => ".".to_string(),
             Self::Semicolon => ";".to_string(),
+            Self::Colon => ":".to_string(),
 
             Self::Plus => "+".to_string(),
             Self::PlusEq => "+=".to_string(),
@@ -251,6 +243,7 @@ impl<'db> Iterator for Lexer<'db> {
             ',' => Some(self.build_token(TokenType::Comma)),
             '.' => Some(self.build_token(TokenType::Dot)),
             ';' => Some(self.build_token(TokenType::Semicolon)),
+            ':' => Some(self.build_token(TokenType::Colon)),
 
             '+' if self.peek_char() != Some('=') => Some(self.build_token(TokenType::Plus)),
             '+' if self.peek_char() == Some('=') => {

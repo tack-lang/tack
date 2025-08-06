@@ -18,19 +18,16 @@ use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 
 use crate::{
     file::{File, InternFile},
-    lexer::Token, utils::Shared,
+    lexer::Token,
 };
 
 #[derive(Default)]
 /// This struct is very large, so it is reccommended that you build it on the heap instead of the stack.
 pub struct QueryDb {
-    /// [crate::lexer::lex]
-    lex: RwLock<HashMap<File, Shared<Vec<Token>>>>,
-
     /// File contents
-    files: RwLock<HashMap<File, Shared<InternFile>>>,
+    files: RwLock<HashMap<File, InternFile>>,
     /// Interned strings
-    strings: RwLock<HashMap<u64, Shared<String>>>,
+    strings: RwLock<HashMap<u64, String>>,
 
 
     /// Error diagnostic messages
@@ -59,37 +56,21 @@ impl QueryDb {
 
     /// Inserts a key-value pair into the given map, as long as there is not an existing value.
     /// If a value is already there, this function will do nothing, and return [`Some(val)`](Some).
-    fn insert<K: Eq + Hash, V>(map: &RwLock<HashMap<K, Shared<V>>>, key: K, val: V) -> Option<V> {
+    fn insert<K: Eq + Hash, V>(map: &RwLock<HashMap<K, V>>, key: K, val: V) -> Option<V> {
         let mut lock = map.write();
 
         if let Entry::Vacant(e) = lock.entry(key) {
-            e.insert(Shared::new(val));
+            e.insert(val);
             None
         } else {
             Some(val)
         }
     }
 
-    /// Attempts to retrieve a value from the `lex` map, based on the key.
-    /// If there is no value, this function will return [`None`].
-    #[inline(always)]
-    pub fn try_lex(&self, key: &File) -> Option<QueryAccess<'_, [Token]>> {
-        Self::try_get(&self.lex, key)
-            .map(|x| MappedRwLockReadGuard::map(x.inner, |x: &Shared<Vec<Token>>| x.as_slice()))
-            .map(QueryAccess::new)
-    }
-
-    /// Inserts a key-value pair into the `lex` map, as long as there is not an existing value.
-    /// If a value is already there, this function will do nothing, and return `Some(val)`.
-    #[inline(always)]
-    pub fn insert_lex(&self, key: File, val: Vec<Token>) -> Option<Vec<Token>> {
-        Self::insert(&self.lex, key, val)
-    }
-
     /// Attempts to retrieve a value from the `file` map, based on the key.
     /// If there is no value, this function will return [`None`].
     #[inline(always)]
-    pub fn try_file(&self, key: &File) -> Option<QueryAccess<'_, Shared<InternFile>>> {
+    pub fn try_file(&self, key: &File) -> Option<QueryAccess<'_, InternFile>> {
         Self::try_get(&self.files, key)
     }
 
@@ -106,7 +87,7 @@ impl QueryDb {
         let mut hasher = DefaultHasher::new();
         string.hash(&mut hasher);
         let hash = hasher.finish(); // Use hash as key
-        lock.insert(hash, Shared::new(string)); // Ignore if the String is already there
+        lock.insert(hash, string); // Ignore if the String is already there
         hash
     }
 

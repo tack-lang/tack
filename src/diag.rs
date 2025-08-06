@@ -1,6 +1,6 @@
 use codespan_reporting::diagnostic::{Diagnostic, Label, Severity};
 
-use crate::{file::File, query::QueryDb, span::Span};
+use crate::{file::File, db::QueryDb, span::Span};
 
 pub trait DiagExt {
     fn with_span_primary(self, span: Span, file: File) -> Self;
