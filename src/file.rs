@@ -1,11 +1,11 @@
 use std::{
     hash::{DefaultHasher, Hash, Hasher},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use codespan_reporting::files;
 
-use crate::query::QueryDb;
+use crate::query::{QueryAccess, QueryDb};
 
 #[derive(Clone, Copy, Debug)]
 pub struct File {
