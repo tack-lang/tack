@@ -1,0 +1,40 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:tack}",
+            "name": "Debug tack",
+            "program": "${workspaceFolder:tack}/.build/debug/tack",
+            "preLaunchTask": "swift: Build Debug tack"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:tack}",
+            "name": "Release tack",
+            "program": "${workspaceFolder:tack}/.build/release/tack",
+            "preLaunchTask": "swift: Build Release tack"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:tack}",
+            "name": "Debug Tack",
+            "program": "${workspaceFolder:tack}/.build/debug/Tack",
+            "preLaunchTask": "swift: Build Debug Tack"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:tack}",
+            "name": "Release Tack",
+            "program": "${workspaceFolder:tack}/.build/release/Tack",
+            "preLaunchTask": "swift: Build Release Tack"
+        }
+    ]
+}
