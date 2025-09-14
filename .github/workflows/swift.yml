@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: microsoft/setup-msbuild@v1.1
     - uses: beeauvin/swiftly-swift@v1
     - uses: actions/checkout@v4
     - name: Build
@@ -30,7 +29,8 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: compnerd/gha-setup-swift@main
+    - uses: microsoft/setup-msbuild@v1.1
+    - uses: SwiftyLab/setup-swift@latest
     - uses: actions/checkout@v4
     - name: Build
       run: swift build -v
