@@ -29,13 +29,21 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: microsoft/setup-msbuild@v1.1
-    - uses: SwiftyLab/setup-swift@latest
     - uses: actions/checkout@v4
-    - name: Build
-      run: swift build -v
-    - name: Run tests
-      run: swift test -v
+    - name: Install WSL and Swift
+      run: |
+        wsl --install -d Ubuntu-22.04
+        wsl -d Ubuntu-22.04 sh -c "sudo apt-get update && sudo apt-get install -y swift"
+
+    - name: Build inside WSL
+      run: |
+        wsl -d Ubuntu-22.04 sh -c "cd /mnt/c/Users/runneradmin/Actions-Runner/_work/tack/tack && swift build -v"
+      shell: bash
+
+    - name: Run tests inside WSL
+      run: |
+        wsl -d Ubuntu-22.04 sh -c "cd /mnt/c/Users/runneradmin/Actions-Runner/_work/tack/tack && swift test -v"
+      shell: bash
   
   build-macos:
     runs-on: macos-latest
