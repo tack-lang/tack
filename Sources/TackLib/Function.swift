@@ -12,8 +12,7 @@ public enum Function {
     case native(NativeFunction)
 
     public func call(_ args: [(Value, Span)], parent env: Environment, leftParen: Span) throws
-        -> Value
-    {
+        -> Value {
         switch self {
         case .tack(let funct):
             try funct.call(args, parent: env, leftParen: leftParen)
@@ -30,8 +29,7 @@ public struct TackFunction {
     var span: Span { Span(from: retType.span.start, to: code.span.end) }
 
     public func call(_ args: [(Value, Span)], parent env: Environment, leftParen: Span) throws
-        -> Value
-    {
+        -> Value {
         var env = Environment(env)
         let diff = params.count - args.count
         switch diff {
