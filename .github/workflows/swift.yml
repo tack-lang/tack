@@ -14,16 +14,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: SwiftyLab/setup-swift@v1
+    - uses: sushichop/gha-swift-env@v1.0.5
     - uses: actions/checkout@v4
     - name: Build
-      uses: Didstopia/SwiftAction@v1.0.3
-      with:
-        swift-action: build -v
+      run: swift build -v
     - name: Run tests
-      uses: Didstopia/SwiftAction@v1.0.3
-      with:
-        swift-action: test -v
+      run: swift test -v
     - name: SwiftLint
       uses: raphaelbussa/swiftlint-action@main
       with:
@@ -33,27 +29,21 @@ jobs:
     runs-on: windows-latest
 
     steps:
+    - uses: sushichop/gha-swift-env@v1.0.5
     - uses: actions/checkout@v4
     - name: Build
-      uses: Didstopia/SwiftAction@v1.0.3
-      with:
-        swift-action: build -v
+      run: swift build -v
     - name: Run tests
-      uses: Didstopia/SwiftAction@v1.0.3
-      with:
-        swift-action: test -v
+      run: swift test -v
   
   build-macos:
     runs-on: macos-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - name: Build
-        uses: Didstopia/SwiftAction@v1.0.3
-        with:
-          swift-action: build -v
-      - name: Run tests
-        uses: Didstopia/SwiftAction@v1.0.3
-        with:
-          swift-action: test -v
+    - uses: sushichop/gha-swift-env@v1.0.5
+    - uses: actions/checkout@v4
+    - name: Build
+      run: swift build -v
+    - name: Run tests
+      run: swift test -v
   
