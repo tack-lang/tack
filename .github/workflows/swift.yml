@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: sushichop/gha-swift-env@v1.0.5
+    - uses: beeauvin/swiftly-swift@v1
     - uses: actions/checkout@v4
     - name: Build
       run: swift build -v
@@ -30,6 +30,8 @@ jobs:
 
     steps:
     - uses: sushichop/gha-swift-env@v1.0.5
+      with:
+        swift-version: latest
     - uses: actions/checkout@v4
     - name: Build
       run: swift build -v
@@ -40,7 +42,6 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: sushichop/gha-swift-env@v1.0.5
     - uses: actions/checkout@v4
     - name: Build
       run: swift build -v
