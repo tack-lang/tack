@@ -1,9 +1,8 @@
 import Testing
 @testable import Tack
 
-struct MyTests {
-    @Test func sanityCheck() {
-        let result = 1 + 2
-        #expect(result == 3)
-    }
+@Test
+func addNumbers() {
+    let result = 2 + 2
+    #expect(result == 4)
 }

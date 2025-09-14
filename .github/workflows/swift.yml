@@ -20,7 +20,13 @@ jobs:
       run: swift build -v
     - name: Run tests
       run: swift test --enable-swift-testing -v
-    - name: SwiftLint
+  
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Lint
       uses: raphaelbussa/swiftlint-action@main
       with:
         subcommand: lint --strict

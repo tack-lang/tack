@@ -5,6 +5,9 @@ import PackageDescription
 
 let package = Package(
     name: "Tack",
+    products: [
+        .executable(name: "Tack", targets: ["Tack"])
+    ],
     dependencies: [
         .package(url: "https://github.com/onevcat/Rainbow.git", from: "4.0.0")
     ],
@@ -17,6 +20,8 @@ let package = Package(
                 .product(name: "Rainbow", package: "Rainbow")
             ]
         ),
-        .testTarget(name: "TackTest", dependencies: ["Tack"], path: "Tests/TackTests", exclude: ["../Sources/main.swift"]),
+        .testTarget(
+            name: "TackTests", dependencies: ["Tack"],
+            exclude: ["../../Sources/main.swift"]),
     ]
 )
