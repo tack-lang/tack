@@ -17,9 +17,13 @@ jobs:
     - uses: SwiftyLab/setup-swift@v1
     - uses: actions/checkout@v4
     - name: Build
-      run: swift build -v
+      uses: Didstopia/SwiftAction@v1.0.3
+      with:
+        swift-action: build -v
     - name: Run tests
-      run: swift test -v
+      uses: Didstopia/SwiftAction@v1.0.3
+      with:
+        swift-action: test -v
     - name: SwiftLint
       uses: raphaelbussa/swiftlint-action@main
       with:
@@ -29,21 +33,27 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: SwiftyLab/setup-swift@v1
     - uses: actions/checkout@v4
     - name: Build
-      run: swift build -v
+      uses: Didstopia/SwiftAction@v1.0.3
+      with:
+        swift-action: build -v
     - name: Run tests
-      run: swift test -v
+      uses: Didstopia/SwiftAction@v1.0.3
+      with:
+        swift-action: test -v
   
   build-macos:
     runs-on: macos-latest
 
     steps:
-      - uses: SwiftyLab/setup-swift@v1
       - uses: actions/checkout@v4
       - name: Build
-        run: swift build -v
+        uses: Didstopia/SwiftAction@v1.0.3
+        with:
+          swift-action: build -v
       - name: Run tests
-        run: swift test -v
+        uses: Didstopia/SwiftAction@v1.0.3
+        with:
+          swift-action: test -v
   
