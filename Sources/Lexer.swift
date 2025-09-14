@@ -128,21 +128,53 @@ struct Lexer {
             _ = nextChar()
         }
         let substr = currentSubstring()
+
+        let suffix: Character?
+        switch peekChar() {
+        case "f", "u", "i":
+            suffix = nextChar()
+        default:
+            suffix = nil
+        }
+
         guard let val = Double(substr) else {
             throw Diag(type: .invalidInteger, span: span.reset())
         }
-        return NumLit(span: span, val: val)
+        return NumLit(span: span, val: val, suffix: suffix)
     }
 
     // Helper function for identifiers and keywords
+    // swiftlint:disable:next cyclomatic_complexity
     private mutating func handleIdentifierOrKeyword(startingWith char: Character) -> Token {
-        while peekChar()?.isLetter == true {
+        while peekChar()?.isLetter == true || peekChar()?.isWholeNumber == true {
             _ = nextChar()
         }
         let substr = currentSubstring()
         switch substr {
         case "void":
             return Void(span: span.reset())
+        case "as":
+            return As(span: span.reset())
+        case "u8":
+            return U8(span: span.reset())
+        case "u16":
+            return U16(span: span.reset())
+        case "u32":
+            return U32(span: span.reset())
+        case "u64":
+            return U64(span: span.reset())
+        case "i8":
+            return I8(span: span.reset())
+        case "i16":
+            return I16(span: span.reset())
+        case "i32":
+            return I32(span: span.reset())
+        case "i64":
+            return I64(span: span.reset())
+        case "float":
+            return FloatKey(span: span.reset())
+        case "double":
+            return DoubleKey(span: span.reset())
         default:
             return Identifier(span: span.reset(), lexeme: String(substr))
         }

@@ -19,6 +19,9 @@ enum DiagType {
     case expectedFunction
     case expectedType
     case wrongType
+    case missingArgument
+    case extraArgument
+    case coercionFailure
 
     // swiftlint:disable:next cyclomatic_complexity
     func msg() -> String {
@@ -59,6 +62,12 @@ enum DiagType {
             return "expected type"
         case .wrongType:
             return "wrong type"
+        case .missingArgument:
+            return "missing argument"
+        case .extraArgument:
+            return "extra argument"
+        case .coercionFailure:
+            return "failed to coerce"
         }
     }
 }

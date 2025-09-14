@@ -43,7 +43,7 @@ do {
         to: .function(
             .native(
                 NativeFunction(
-                    code: {(args, _) throws -> Value in
+                    code: {(args, _, _) throws -> Value in
                         switch args[0].0 {
                         case .string(let str):
                             print(str)
@@ -66,7 +66,7 @@ do {
     }
     switch env.getVariable(named: "main")!.get()! {
     case .function(let function):
-        _ = try function.call([], parent: env)
+        _ = try function.call([], parent: env, leftParen: Span())
     default:
         todo()
     }

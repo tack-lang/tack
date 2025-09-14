@@ -1,35 +1,3 @@
-enum Value {
-    case uint(UInt)
-    case int(Int)
-    case float(Float)
-    case double(Double)
-    case string(String)
-    case void
-    case type(Type)
-    case function(Function)
-
-    func type() -> Type {
-        switch self {
-        case .uint:
-            .uint
-        case .int:
-            .int
-        case .float:
-            .float
-        case .double:
-            .double
-        case .string:
-            .string
-        case .void:
-            .void
-        case .type:
-            .type
-        case .function:
-            .function
-        }
-    }
-}
-
 protocol Statement {
     var span: Span { get }
 
@@ -61,17 +29,6 @@ extension Expression {
     }
 }
 
-enum Type {
-    case uint
-    case int
-    case float
-    case double
-    case string
-    case void
-    case type
-    case function
-}
-
 struct Parser {
     var lexer: Lexer
     var peeked: Token??
@@ -81,7 +38,9 @@ struct Parser {
         self.lexer = lexer
         file = lexer.file
     }
+}
 
+extension Parser {
     mutating func nextToken() throws -> Token? {
         if peeked != nil {
             let old = peeked!
@@ -114,7 +73,7 @@ struct Parser {
     mutating func identifier() throws -> Identifier {
         let tok = try unwrapEof(try nextToken())
         guard let ident = tok as? Identifier else {
-            throw Diag(type: .expectedIdentifier, span: tok.span, msg: "expected literal '\(tok)'")
+            throw Diag(type: .expectedIdentifier, span: tok.span, msg: "expected identifier, found '\(tok)'")
         }
         return ident
     }
@@ -238,7 +197,7 @@ struct Parser {
     }
 
     mutating func factor() throws -> Expression? {
-        guard var left = try call() else {
+        guard var left = try coerce() else {
             return nil
         }
 
@@ -247,7 +206,7 @@ struct Parser {
             case is Star:
                 _ = try nextToken()
 
-                let right = try unwrapEof(try call())
+                let right = try unwrapEof(try coerce())
                 left = Binary(
                     Multiplication(left: left, right: right),
                     span: Span(from: left.span.start, to: right.span.end)
@@ -255,7 +214,7 @@ struct Parser {
             case is Slash:
                 _ = try nextToken()
 
-                let right = try unwrapEof(try call())
+                let right = try unwrapEof(try coerce())
                 left = Binary(
                     Division(left: left, right: right),
                     span: Span(from: left.span.start, to: right.span.end)
@@ -266,6 +225,18 @@ struct Parser {
         }
 
         return left
+    }
+
+    mutating func coerce() throws -> Expression? {
+        guard let left = try call() else {
+            return nil
+        }
+        guard try peekToken() is As else {
+            return left
+        }
+        _ = try nextToken()
+        let type = try unwrapEof(try typeExpression())
+        return Coerce(left: left, type: type, span: Span(from: left.span.start, to: type.span.end))
     }
 
     mutating func call() throws -> Expression? {
@@ -309,6 +280,7 @@ struct Parser {
         }
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     mutating func literal() throws -> Literal? {
         guard let token: any Token = try nextToken() else {
             return nil
@@ -318,9 +290,29 @@ struct Parser {
         case let token as StringLit:
             return Literal(.string(token.val), span: token.span)
         case let token as NumLit:
-            return Literal(.double(Double(token.val)), span: token.span)
+            return Literal(token.toVal(), span: token.span)
         case is Void:
             return Literal(.type(.void), span: token.span)
+        case is U8:
+            return Literal(.type(.u8), span: token.span)
+        case is U16:
+            return Literal(.type(.u16), span: token.span)
+        case is U32:
+            return Literal(.type(.u32), span: token.span)
+        case is U64:
+            return Literal(.type(.u64), span: token.span)
+        case is I8:
+            return Literal(.type(.i8), span: token.span)
+        case is I16:
+            return Literal(.type(.i16), span: token.span)
+        case is I32:
+            return Literal(.type(.i32), span: token.span)
+        case is I64:
+            return Literal(.type(.i64), span: token.span)
+        case is FloatKey:
+            return Literal(.type(.double), span: token.span)
+        case is DoubleKey:
+            return Literal(.type(.double), span: token.span)
         default:
             throw Diag(
                 type: .expectedLiteral, span: token.span,

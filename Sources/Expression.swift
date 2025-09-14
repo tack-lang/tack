@@ -1,6 +1,9 @@
+// swiftlint:disable file_length
+
 func isNumber(_ type: Type) -> Bool {
     switch type {
-    case .uint, .int, .float, .double:
+    case .u8, .u16, .u32, .u64, .compuint, .i8, .i16, .i32, .i64, .compint, .float, .double,
+        .compfloat, .compnum:
         true
     default:
         false
@@ -34,6 +37,7 @@ extension BinaryExpression {
     }
 }
 
+// swiftlint:disable cyclomatic_complexity
 struct Binary: Expression {
     let inner: any BinaryExpression
     let span: Span
@@ -44,7 +48,20 @@ struct Binary: Expression {
     }
 
     func evalSides(withEnv env: Environment) throws -> (Value, Value) {
-        (try inner.left.value(withEnv: env), try inner.right.value(withEnv: env))
+        let left = try inner.left.value(withEnv: env)
+        let right = try inner.right.value(withEnv: env)
+
+        let rightCoerced = right.coerce(to: left.type())
+        if let right = rightCoerced {
+            print("right coerced to \(left.type())")
+            return (left, right)
+        }
+        let leftCoerced = left.coerce(to: right.type())
+        if let left = leftCoerced {
+            print("left coerced to \(right.type())")
+            return (left, right)
+        }
+        return (left, right)
     }
 
     func value(withEnv env: Environment) throws -> Value {
@@ -74,10 +91,22 @@ struct Addition: BinaryExpression {
     func operate(_ left: Value, _ right: Value) throws -> Value {
         try valid(left, right)
         switch (left, right) {
-        case (.uint(let left), .uint(let right)):
-            return .uint(left + right)
-        case (.int(let left), .int(let right)):
-            return .int(left + right)
+        case (.u8(let left), .u8(let right)):
+            return .u8(left + right)
+        case (.u16(let left), .u16(let right)):
+            return .u16(left + right)
+        case (.u32(let left), .u32(let right)):
+            return .u32(left + right)
+        case (.u64(let left), .u64(let right)):
+            return .u64(left + right)
+        case (.i8(let left), .i8(let right)):
+            return .i8(left + right)
+        case (.i16(let left), .i16(let right)):
+            return .i16(left + right)
+        case (.i32(let left), .i32(let right)):
+            return .i32(left + right)
+        case (.i64(let left), .i64(let right)):
+            return .i64(left + right)
         case (.float(let left), .float(let right)):
             return .float(left + right)
         case (.double(let left), .double(let right)):
@@ -119,10 +148,22 @@ struct Subtraction: BinaryExpression {
     func operate(_ left: Value, _ right: Value) throws -> Value {
         try valid(left, right)
         switch (left, right) {
-        case (.uint(let left), .uint(let right)):
-            return .uint(left - right)
-        case (.int(let left), .int(let right)):
-            return .int(left - right)
+        case (.u8(let left), .u8(let right)):
+            return .u8(left - right)
+        case (.u16(let left), .u16(let right)):
+            return .u16(left - right)
+        case (.u32(let left), .u32(let right)):
+            return .u32(left - right)
+        case (.u64(let left), .u64(let right)):
+            return .u64(left - right)
+        case (.i8(let left), .i8(let right)):
+            return .i8(left - right)
+        case (.i16(let left), .i16(let right)):
+            return .i16(left - right)
+        case (.i32(let left), .i32(let right)):
+            return .i32(left - right)
+        case (.i64(let left), .i64(let right)):
+            return .i64(left - right)
         case (.float(let left), .float(let right)):
             return .float(left - right)
         case (.double(let left), .double(let right)):
@@ -162,10 +203,22 @@ struct Multiplication: BinaryExpression {
     func operate(_ left: Value, _ right: Value) throws -> Value {
         try valid(left, right)
         switch (left, right) {
-        case (.uint(let left), .uint(let right)):
-            return .uint(left * right)
-        case (.int(let left), .int(let right)):
-            return .int(left * right)
+        case (.u8(let left), .u8(let right)):
+            return .u8(left * right)
+        case (.u16(let left), .u16(let right)):
+            return .u16(left * right)
+        case (.u32(let left), .u32(let right)):
+            return .u32(left * right)
+        case (.u64(let left), .u64(let right)):
+            return .u64(left * right)
+        case (.i8(let left), .i8(let right)):
+            return .i8(left * right)
+        case (.i16(let left), .i16(let right)):
+            return .i16(left * right)
+        case (.i32(let left), .i32(let right)):
+            return .i32(left * right)
+        case (.i64(let left), .i64(let right)):
+            return .i64(left * right)
         case (.float(let left), .float(let right)):
             return .float(left * right)
         case (.double(let left), .double(let right)):
@@ -205,10 +258,22 @@ struct Division: BinaryExpression {
     func operate(_ left: Value, _ right: Value) throws -> Value {
         try valid(left, right)
         switch (left, right) {
-        case (.uint(let left), .uint(let right)):
-            return .uint(left / right)
-        case (.int(let left), .int(let right)):
-            return .int(left / right)
+        case (.u8(let left), .u8(let right)):
+            return .u8(left / right)
+        case (.u16(let left), .u16(let right)):
+            return .u16(left / right)
+        case (.u32(let left), .u32(let right)):
+            return .u32(left / right)
+        case (.u64(let left), .u64(let right)):
+            return .u64(left / right)
+        case (.i8(let left), .i8(let right)):
+            return .i8(left / right)
+        case (.i16(let left), .i16(let right)):
+            return .i16(left / right)
+        case (.i32(let left), .i32(let right)):
+            return .i32(left / right)
+        case (.i64(let left), .i64(let right)):
+            return .i64(left / right)
         case (.float(let left), .float(let right)):
             return .float(left / right)
         case (.double(let left), .double(let right)):
@@ -240,6 +305,7 @@ struct Division: BinaryExpression {
         return left.type()
     }
 }
+// swiftlint:enable cyclomatic_complexity
 
 struct Literal: Expression {
     let value: Value
@@ -320,13 +386,16 @@ struct Call: Expression {
     func value(withEnv env: Environment) throws -> Value {
         let val = try function.value(withEnv: env)
         guard case .function(let funct) = val else {
-            throw Diag(type: .expectedFunction, span: span, msg: "expected function, found \(val.type())")
+            throw Diag(
+                type: .expectedFunction, span: span, msg: "expected function, found \(val.type())")
         }
         var argVals: [(Value, Span)] = []
         for arg in args {
-            argVals.append((try arg.value(withEnv: env), arg.span))
+            let value = try arg.value(withEnv: env)
+            argVals.append((value, arg.span))
         }
-        return try funct.call(argVals, parent: env.root())
+        return try funct.call(
+            argVals, parent: env.root(), leftParen: Span(from: span.end - 1, to: span.end))
     }
 
     func valid(withEnv: Environment) -> Bool {
@@ -335,6 +404,31 @@ struct Call: Expression {
 
     func type(withEnv: Environment) -> Type? {
         todo()
+    }
+
+}
+
+struct Coerce: Expression {
+    let left: Expression
+    let type: Expression
+    let span: Span
+
+    func value(withEnv env: Environment) throws -> Value {
+        let val = try left.value(withEnv: env)
+        let type = try type.toType(withEnv: env)
+        guard let coerced = val.coerce(to: type)
+        else {
+            throw Diag(type: .coercionFailure, span: span, msg: "cannot coerce \(val.type()) to \(type)")
+        }
+        return coerced
+    }
+
+    func valid(withEnv env: Environment) -> Bool {
+        (try? value(withEnv: env)) != nil
+    }
+
+    func type(withEnv env: Environment) -> Type? {
+        try? type.toType(withEnv: env)
     }
 
 }
