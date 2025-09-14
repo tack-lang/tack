@@ -98,7 +98,7 @@ struct Slash: Token {
 }
 
 // Keywords
-struct Void: Token {
+struct VoidKey: Token {
     let span: Span
 
     var lexeme: String { "void" }

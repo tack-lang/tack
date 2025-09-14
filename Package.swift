@@ -16,6 +16,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Rainbow", package: "Rainbow")
             ]
-        )
+        ),
+        .testTarget(name: "TackTest", dependencies: [.target(name: "Tack")])
     ]
 )

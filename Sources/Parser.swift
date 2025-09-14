@@ -73,7 +73,9 @@ extension Parser {
     mutating func identifier() throws -> Identifier {
         let tok = try unwrapEof(try nextToken())
         guard let ident = tok as? Identifier else {
-            throw Diag(type: .expectedIdentifier, span: tok.span, msg: "expected identifier, found '\(tok)'")
+            throw Diag(
+                type: .expectedIdentifier, span: tok.span,
+                msg: "expected identifier, found '\(tok)'")
         }
         return ident
     }
@@ -153,7 +155,8 @@ extension Parser {
         switch tok {
         default:
             let (ident, funct) = try unwrapEof(try funct())
-            return .constant(Constant(name: ident, value: Literal(.function(funct), span: funct.span)))
+            return .constant(
+                Constant(name: ident, value: Literal(.function(funct), span: funct.span)))
         }
     }
 
@@ -291,7 +294,7 @@ extension Parser {
             return Literal(.string(token.val), span: token.span)
         case let token as NumLit:
             return Literal(token.toVal(), span: token.span)
-        case is Void:
+        case is VoidKey:
             return Literal(.type(.void), span: token.span)
         case is U8:
             return Literal(.type(.u8), span: token.span)

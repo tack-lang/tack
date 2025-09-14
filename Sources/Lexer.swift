@@ -152,7 +152,7 @@ struct Lexer {
         let substr = currentSubstring()
         switch substr {
         case "void":
-            return Void(span: span.reset())
+            return VoidKey(span: span.reset())
         case "as":
             return As(span: span.reset())
         case "u8":
