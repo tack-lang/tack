@@ -18,7 +18,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: beeauvin/swiftly-swift@v1
     - uses: m-takuma/setup-swiftlint@1.0.0
     - uses: actions/checkout@v4
     - name: Build
