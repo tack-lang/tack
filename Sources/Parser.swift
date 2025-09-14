@@ -5,6 +5,8 @@ enum Value {
     case double(Double)
     case string(String)
     case void
+    case type(Type)
+    case function(Function)
 
     func type() -> Type {
         switch self {
@@ -20,16 +22,43 @@ enum Value {
             .string
         case .void:
             .void
+        case .type:
+            .type
+        case .function:
+            .function
         }
     }
 }
 
-protocol Expression {
+protocol Statement {
+    var span: Span { get }
+
+    func run(withEnv: inout Environment) throws -> Value
+    func valid(withEnv: Environment) -> Bool
+    func type(withEnv: Environment) -> Type?
+}
+
+protocol Expression: Statement {
     var span: Span { get }
 
     func value(withEnv: Environment) throws -> Value
     func valid(withEnv: Environment) -> Bool
     func type(withEnv: Environment) -> Type?
+}
+
+extension Expression {
+    func run(withEnv env: inout Environment) throws -> Value {
+        try value(withEnv: env)
+    }
+
+    func toType(withEnv env: Environment) throws -> Type {
+        switch try value(withEnv: env) {
+        case .type(let type):
+            return type
+        default:
+            throw Diag(type: .expectedType, span: span)
+        }
+    }
 }
 
 enum Type {
@@ -39,13 +68,8 @@ enum Type {
     case double
     case string
     case void
-}
-
-enum ExpressionError: Error {
-    case mismatchedTypes(left: Type, right: Type)
-    case cantOperate(type: Type, operator: String)
-    case variableNotFound(name: String)
-    case variableUnitialized(name: String)
+    case type
+    case function
 }
 
 struct Parser {
@@ -87,25 +111,124 @@ struct Parser {
         Diag(type: .eof, span: self.file.eofSpan(), file: file, line: line, column: column)
     }
 
+    mutating func identifier() throws -> Identifier {
+        let tok = try unwrapEof(try nextToken())
+        guard let ident = tok as? Identifier else {
+            throw Diag(type: .expectedIdentifier, span: tok.span, msg: "expected literal '\(tok)'")
+        }
+        return ident
+    }
+
+    mutating func block() throws -> Block? {
+        guard let tok = try nextToken() else {
+            return nil
+        }
+
+        guard let openBrace = tok as? OpenBrace else {
+            throw Diag(type: .expectedOpenBrace, span: tok.span)
+        }
+
+        var statements: [Statement] = []
+
+        while !(try unwrapEof(try peekToken()) is CloseBrace) {
+            statements.append(try unwrapEof(try statement()))
+        }
+
+        let tok2 = try unwrapEof(try nextToken())
+        guard let closeBrace = tok2 as? CloseBrace else {
+            throw Diag(type: .expectedCloseBrace, span: tok2.span)
+        }
+
+        return Block(
+            span: Span(from: openBrace.span.start, to: closeBrace.span.start),
+            statements: statements)
+    }
+
+    mutating func funct() throws -> (Identifier, Function)? {
+        let retType = try unwrapEof(try typeExpression())
+        let ident = try identifier()
+        let tok = try unwrapEof(try nextToken())
+        guard tok is OpenParen else {
+            throw Diag(
+                type: .expectedParamsStart, span: tok.span,
+                msg: "expected beginning of function params, found '\(tok)'")
+        }
+        var params: [(Identifier, any Expression)] = []
+        while !(try unwrapEof(try peekToken()) is CloseParen) {
+            let paramName = try identifier()
+            let tok = try unwrapEof(try nextToken())
+            guard tok is Colon else {
+                throw Diag(type: .expectedColon, span: tok.span)
+            }
+            let type = try unwrapEof(try typeExpression())
+            let comma = try unwrapEof(try peekToken())
+            if comma is Comma {
+                _ = try nextToken()
+            }
+
+            params.append((paramName, type))
+        }
+        let tok2 = try unwrapEof(try nextToken())
+        guard tok2 is CloseParen else {
+            throw Diag(
+                type: .expectedParamsEnd, span: tok2.span,
+                msg: "expected ending of function params, found '\(tok)'")
+        }
+        let code = try unwrapEof(try block())
+        let funct = TackFunction(code: code, params: params, retType: retType)
+        return (ident, .tack(funct))
+    }
+
+    mutating func statement() throws -> Statement? {
+        guard try peekToken() != nil else {
+            return nil
+        }
+        return try unwrapEof(try expression())
+    }
+
+    mutating func item() throws -> Item? {
+        guard let tok = try peekToken() else {
+            return nil
+        }
+
+        switch tok {
+        default:
+            let (ident, funct) = try unwrapEof(try funct())
+            return .constant(Constant(name: ident, value: Literal(.function(funct), span: funct.span)))
+        }
+    }
+
+    mutating func expression() throws -> Expression? {
+        try term()
+    }
+
+    mutating func typeExpression() throws -> Expression? {
+        try primary()
+    }
+
     mutating func term() throws -> Expression? {
-        guard var left = try primary() else {
+        guard var left = try factor() else {
             return nil
         }
 
         while let tok = try peekToken() {
             switch tok {
             case is Plus:
-                let tok = try nextToken()!
-
-                let right = try unwrapEof(try factor())
-                left = Binary(Addition(left: left, right: right), span: Span(from: left.span.start, to: tok.span.end))
-            case is Minus:
-                let tok = try nextToken()!
-
-                let right = try unwrapEof(try factor())
-                left = Binary(Subtraction(left: left, right: right), span: Span(from: left.span.start, to: tok.span.end))
-            case is NewLine:
                 _ = try nextToken()
+
+                let right = try unwrapEof(try factor())
+                left = Binary(
+                    Addition(left: left, right: right),
+                    span: Span(from: left.span.start, to: right.span.end)
+                )
+            case is Minus:
+                _ = try nextToken()
+
+                let right = try unwrapEof(try factor())
+                left = Binary(
+                    Subtraction(left: left, right: right),
+                    span: Span(from: left.span.start, to: right.span.end)
+                )
             default:
                 return left
             }
@@ -115,24 +238,28 @@ struct Parser {
     }
 
     mutating func factor() throws -> Expression? {
-        guard var left = try primary() else {
+        guard var left = try call() else {
             return nil
         }
 
         while let tok = try peekToken() {
             switch tok {
             case is Star:
-                let tok = try nextToken()!
-
-                let right = try unwrapEof(try primary())
-                left = Binary(Multiplication(left: left, right: right), span: Span(from: left.span.start, to: tok.span.end))
-            case is Slash:
-                let tok = try nextToken()!
-
-                let right = try unwrapEof(try primary())
-                left = Binary(Division(left: left, right: right), span: Span(from: left.span.start, to: tok.span.end))
-            case is NewLine:
                 _ = try nextToken()
+
+                let right = try unwrapEof(try call())
+                left = Binary(
+                    Multiplication(left: left, right: right),
+                    span: Span(from: left.span.start, to: right.span.end)
+                )
+            case is Slash:
+                _ = try nextToken()
+
+                let right = try unwrapEof(try call())
+                left = Binary(
+                    Division(left: left, right: right),
+                    span: Span(from: left.span.start, to: right.span.end)
+                )
             default:
                 return left
             }
@@ -141,18 +268,42 @@ struct Parser {
         return left
     }
 
+    mutating func call() throws -> Expression? {
+        guard let left = try primary() else {
+            return nil
+        }
+        guard try peekToken() is OpenParen else {
+            return left
+        }
+        _ = try nextToken()
+        var expressions: [Expression] = []
+        while !(try unwrapEof(try peekToken()) is CloseParen) {
+            let expr = try unwrapEof(try expression())
+            if try unwrapEof(try peekToken()) is Comma {
+                _ = try nextToken()
+            }
+            expressions.append(expr)
+        }
+        guard let closeParen = try nextToken() as? CloseParen else {
+            unreachable()
+        }
+        return Call(
+            function: left, args: expressions,
+            span: Span(from: left.span.start, to: closeParen.span.end))
+    }
+
     mutating func primary() throws -> Expression? {
-        guard let token: any Token = try peekToken() else {
+        guard let token = try peekToken() else {
             return nil
         }
 
         switch token {
-        case is NewLine:
-            _ = try nextToken()
-            return try primary()
         case let token as Identifier:
-            _ = try nextToken() // Skip equals
+            _ = try nextToken()  // Consume identifier
             return Variable(name: token)
+        case is OpenBrace:
+            let block = try unwrapEof(try block())
+            return block
         default:
             return try unwrapEof(try literal())
         }
@@ -164,15 +315,16 @@ struct Parser {
         }
 
         switch token {
-        case is NewLine:
-            return try literal()
         case let token as StringLit:
             return Literal(.string(token.val), span: token.span)
         case let token as NumLit:
             return Literal(.double(Double(token.val)), span: token.span)
+        case is Void:
+            return Literal(.type(.void), span: token.span)
         default:
             throw Diag(
-                type: .expectedLiteral, span: token.span, msg: "expected a literal, found \(token)")
+                type: .expectedLiteral, span: token.span,
+                msg: "expected a literal, found '\(token)'")
         }
     }
 }

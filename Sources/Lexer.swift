@@ -24,9 +24,6 @@ struct Lexer {
     mutating func skipWhitespace() {
         while true {
             switch peekChar() {
-            case "\n":
-                _ = span.reset()
-                return
             case let char where char?.isWhitespace == true:
                 _ = nextChar()
             default:
@@ -83,9 +80,11 @@ struct Lexer {
         }
     }
 
-    // Helper function for single-character tokens
+    // swiftlint:disable:next cyclomatic_complexity
     private mutating func handleSingleCharacterTokens(_ char: Character) -> Token? {
         switch char {
+        case ":":
+            return Colon(span: span.reset())
         case "(":
             return OpenParen(span: span.reset())
         case ")":
@@ -102,8 +101,8 @@ struct Lexer {
             return Star(span: span.reset())
         case "/":
             return Slash(span: span.reset())
-        case "\n":
-            return NewLine(span: span.reset())
+        case ",":
+            return Comma(span: span.reset())
         default:
             return nil
         }
@@ -125,11 +124,11 @@ struct Lexer {
 
     // Helper function for number literals
     private mutating func handleNumberLiteral(startingWith char: Character) throws -> Token {
-        while peekChar()?.isWholeNumber == true {
+        while peekChar()?.isWholeNumber == true || peekChar() == "e" || peekChar() == "." {
             _ = nextChar()
         }
         let substr = currentSubstring()
-        guard let val = UInt(substr) else {
+        guard let val = Double(substr) else {
             throw Diag(type: .invalidInteger, span: span.reset())
         }
         return NumLit(span: span, val: val)

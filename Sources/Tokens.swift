@@ -1,6 +1,7 @@
 struct Identifier: Token {
     let span: Span
     let lexeme: String
+    static let staticLexeme: String? = nil
 }
 
 // Literals
@@ -9,13 +10,15 @@ struct StringLit: Token {
     let val: String
 
     var lexeme: String
+    static let staticLexeme: String? = nil
 }
 
 struct NumLit: Token {
     let span: Span
-    let val: UInt
+    let val: Double
 
     var lexeme: String { String(val) }
+    static let staticLexeme: String? = nil
 }
 
 // Symbols
@@ -41,6 +44,18 @@ struct CloseBrace: Token {
     let span: Span
 
     var lexeme: String { "}" }
+}
+
+struct Colon: Token {
+    let span: Span
+
+    var lexeme: String { ":" }
+}
+
+struct Comma: Token {
+    let span: Span
+
+    var lexeme: String { "," }
 }
 
 // Arithmetic
@@ -73,11 +88,4 @@ struct Void: Token {
     let span: Span
 
     var lexeme: String { "void" }
-}
-
-// Miscelaneous
-struct NewLine: Token {
-    let span: Span
-
-    var lexeme: String { "\n" }
 }

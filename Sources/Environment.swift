@@ -13,6 +13,7 @@ enum VariableError: Error {
 }
 
 struct RuntimeVariable {
+    let constant: Bool
     let type: Type
     var value: Value?
 
@@ -36,6 +37,16 @@ struct Environment {
     var variables: [String: RuntimeVariable] = Dictionary()
     @Indirect var parent: Environment?
 
+    init() {}
+
+    init(_ env: Environment) {
+        parent = env
+    }
+
+    func root() -> Environment {
+        parent?.root() ?? self
+    }
+
     func getVariable(named name: String) -> RuntimeVariable? {
         guard let value = variables[name] else {
             return parent?.getVariable(named: name)
@@ -50,11 +61,18 @@ struct Environment {
         return true
     }
 
+    mutating func declareConstant(named name: String, to value: Value) throws {
+        guard variables[name] == nil else {
+            throw VariableError.alreadyExists(name: name)
+        }
+        variables[name] = RuntimeVariable(constant: true, type: value.type(), value: value)
+    }
+
     mutating func declareVariable(named name: String, as type: Type) throws {
         guard variables[name] == nil else {
             throw VariableError.alreadyExists(name: name)
         }
-        variables[name] = RuntimeVariable(type: type)
+        variables[name] = RuntimeVariable(constant: false, type: type)
     }
 
     mutating func setVariable(named name: String, to value: Value) throws {

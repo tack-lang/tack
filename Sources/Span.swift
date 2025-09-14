@@ -7,12 +7,12 @@ struct Span {
         end = 0
     }
 
+    // swiftlint:disable identifier_name
     init(from: UInt, to: UInt) {
         start = from
         end = to
     }
 
-    // swiftlint:disable identifier_name
     mutating func growFront(by: UInt) {
         end += by
     }

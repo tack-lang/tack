@@ -91,10 +91,16 @@ struct Addition: BinaryExpression {
 
     func valid(_ left: Value, _ right: Value) throws {
         guard left.type() == right.type() else {
-            throw ExpressionError.mismatchedTypes(left: left.type(), right: right.type())
+            throw Diag(
+                type: .mismatchedTypes,
+                span: Span(from: self.left.span.start, to: self.right.span.end),
+                msg: "mismatched types in operator '+'")
         }
         guard isNumber(left.type()) || isString(left.type()) else {
-            throw ExpressionError.cantOperate(type: left.type(), operator: "add")
+            throw Diag(
+                type: .cantOperate,
+                span: Span(from: self.left.span.start, to: self.right.span.end),
+                msg: "operator '+' can't operate on type \(left.type())")
         }
     }
 
@@ -128,10 +134,16 @@ struct Subtraction: BinaryExpression {
 
     func valid(_ left: Value, _ right: Value) throws {
         guard left.type() == right.type() else {
-            throw ExpressionError.mismatchedTypes(left: left.type(), right: right.type())
+            throw Diag(
+                type: .mismatchedTypes,
+                span: Span(from: self.left.span.start, to: self.right.span.end),
+                msg: "mismatched types in operator '-'")
         }
         guard isNumber(left.type()) else {
-            throw ExpressionError.cantOperate(type: left.type(), operator: "subtract")
+            throw Diag(
+                type: .cantOperate,
+                span: Span(from: self.left.span.start, to: self.right.span.end),
+                msg: "operator '-' can't operate on type \(left.type())")
         }
     }
 
@@ -165,10 +177,16 @@ struct Multiplication: BinaryExpression {
 
     func valid(_ left: Value, _ right: Value) throws {
         guard left.type() == right.type() else {
-            throw ExpressionError.mismatchedTypes(left: left.type(), right: right.type())
+            throw Diag(
+                type: .mismatchedTypes,
+                span: Span(from: self.left.span.start, to: self.right.span.end),
+                msg: "mismatched types in operator '*'")
         }
         guard isNumber(left.type()) else {
-            throw ExpressionError.cantOperate(type: left.type(), operator: "multiply")
+            throw Diag(
+                type: .cantOperate,
+                span: Span(from: self.left.span.start, to: self.right.span.end),
+                msg: "operator '*' can't operate on type \(left.type())")
         }
     }
 
@@ -202,10 +220,16 @@ struct Division: BinaryExpression {
 
     func valid(_ left: Value, _ right: Value) throws {
         guard left.type() == right.type() else {
-            throw ExpressionError.mismatchedTypes(left: left.type(), right: right.type())
+            throw Diag(
+                type: .mismatchedTypes,
+                span: Span(from: self.left.span.start, to: self.right.span.end),
+                msg: "mismatched types in operator '/'")
         }
         guard isNumber(left.type()) else {
-            throw ExpressionError.cantOperate(type: left.type(), operator: "divide")
+            throw Diag(
+                type: .cantOperate,
+                span: Span(from: self.left.span.start, to: self.right.span.end),
+                msg: "operator '/' can't operate on type \(left.type())")
         }
     }
 
@@ -245,10 +269,13 @@ struct Variable: Expression {
 
     func value(withEnv env: Environment) throws -> Value {
         guard let variable = env.getVariable(named: name.lexeme) else {
-            throw ExpressionError.variableNotFound(name: name.lexeme)
+            throw Diag(
+                type: .variableNotFound, span: span, msg: "variable '\(name.lexeme)' not found")
         }
         guard let value = variable.get() else {
-            throw ExpressionError.variableUnitialized(name: name.lexeme)
+            throw Diag(
+                type: .variableUninitialized, span: span,
+                msg: "variable '\(name.lexeme)' is unitialized")
         }
         return value
     }
@@ -260,4 +287,54 @@ struct Variable: Expression {
     func type(withEnv env: Environment) -> Type? {
         env.getVariable(named: name.lexeme)?.type
     }
+}
+
+struct Block: Expression {
+    var span: Span
+    var statements: [Statement]
+
+    func value(withEnv env: Environment) throws -> Value {
+        var env = env
+        var ret: Value = .void
+        for stmt in statements {
+            ret = try stmt.run(withEnv: &env)
+        }
+        return ret
+    }
+
+    func valid(withEnv env: Environment) -> Bool {
+        true
+    }
+
+    func type(withEnv env: Environment) -> Type? {
+        statements.last?.type(withEnv: env) ?? .void
+    }
+
+}
+
+struct Call: Expression {
+    let function: Expression
+    let args: [Expression]
+    let span: Span
+
+    func value(withEnv env: Environment) throws -> Value {
+        let val = try function.value(withEnv: env)
+        guard case .function(let funct) = val else {
+            throw Diag(type: .expectedFunction, span: span, msg: "expected function, found \(val.type())")
+        }
+        var argVals: [(Value, Span)] = []
+        for arg in args {
+            argVals.append((try arg.value(withEnv: env), arg.span))
+        }
+        return try funct.call(argVals, parent: env.root())
+    }
+
+    func valid(withEnv: Environment) -> Bool {
+        todo()
+    }
+
+    func type(withEnv: Environment) -> Type? {
+        todo()
+    }
+
 }

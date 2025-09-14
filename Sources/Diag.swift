@@ -5,6 +5,62 @@ enum DiagType {
     case invalidInteger
     case expectedLiteral
     case unknownCharacter
+    case expectedIdentifier
+    case expectedParamsStart
+    case expectedColon
+    case expectedOpenBrace
+    case expectedCloseBrace
+    case expectedParamsEnd
+    case expectedComma
+    case mismatchedTypes
+    case cantOperate
+    case variableNotFound
+    case variableUninitialized
+    case expectedFunction
+    case expectedType
+    case wrongType
+
+    // swiftlint:disable:next cyclomatic_complexity
+    func msg() -> String {
+        switch self {
+        case .eof:
+            return "unexpected end of file"
+        case .invalidInteger:
+            return "invalid integer literal"
+        case .expectedLiteral:
+            return "expected literal"
+        case .unknownCharacter:
+            return "unknown character"
+        case .expectedIdentifier:
+            return "expected identifier"
+        case .expectedParamsStart:
+            return "expected beginning of function params"
+        case .expectedColon:
+            return "expected colon"
+        case .expectedCloseBrace:
+            return "expected closing brace"
+        case .expectedOpenBrace:
+            return "expected opening brace"
+        case .expectedParamsEnd:
+            return "expected ending of function params"
+        case .expectedComma:
+            return "expected comma"
+        case .mismatchedTypes:
+            return "mismatched types"
+        case .cantOperate:
+            return "can't operate on type"
+        case .variableNotFound:
+            return "variable not found"
+        case .variableUninitialized:
+            return "variable not initialized"
+        case .expectedFunction:
+            return "expected function value"
+        case .expectedType:
+            return "expected type"
+        case .wrongType:
+            return "wrong type"
+        }
+    }
 }
 
 struct Diag: Error {
@@ -15,9 +71,9 @@ struct Diag: Error {
 
     // Debug stuff
     #if DEBUG
-    let file: String
-    let line: UInt
-    let column: UInt
+        let file: String
+        let line: UInt
+        let column: UInt
     #endif
 
     init(
@@ -31,24 +87,14 @@ struct Diag: Error {
             // lol debug message
             debugPrint("msg is nil!! plz fix!!")
             debugPrint("\(file):\(line):\(column)")
-
-            switch type {
-            case .eof:
-                self.msg = "unexpected end of file"
-            case .invalidInteger:
-                self.msg = "invalid integer literal"
-            case .expectedLiteral:
-                self.msg = "expected a literal"
-            case .unknownCharacter:
-                self.msg = "unknown character"
-            }
+            self.msg = type.msg()
         } else {
             self.msg = msg!
         }
         #if DEBUG
-        self.file = file
-        self.line = line
-        self.column = column
+            self.file = file
+            self.line = line
+            self.column = column
         #endif
     }
 }
@@ -73,10 +119,15 @@ func renderError(diag: Diag, file: File) -> String {
     let lineStr = String(line + 1)
     let padding = lineStr.count + 1
     #if DEBUG
-    let debug =
-        "\n\(String(repeating: " ", count: padding - 1))\(diag.file):\(diag.line):\(diag.column)"
+        var debug =
+            "\n\(String(repeating: " ", count: padding - 1))\(diag.file):\(diag.line):\(diag.column)"
+        if #available(macOS 13.0, *) {
+            debug.replace("Tack", with: "Sources")
+        } else {
+
+        }
     #else
-    let debug = ""
+        let debug = ""
     #endif
 
     // Assemble the final output

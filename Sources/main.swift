@@ -38,11 +38,37 @@ var lexer = Lexer(src: file)
 var parser = Parser(lexer: lexer)
 do {
     var env = Environment()
-    try env.declareVariable(named: "world", as: .string)
-    try env.setVariable(named: "world", to: .string("World!"))
+    try env.declareConstant(
+        named: "println",
+        to: .function(
+            .native(
+                NativeFunction(
+                    code: {(args, _) throws -> Value in
+                        switch args[0].0 {
+                        case .string(let str):
+                            print(str)
+                        case .double(let num):
+                            print(num)
+                        default:
+                            print(args[0].0)
+                        }
+                        return .void
+                    }))))
 
-    while let term = try parser.term() {
-        print("\(term): \(try term.value(withEnv: env))")
+    var items: [Item] = []
+    while let item = try parser.item() {
+        items.append(item)
+        switch item {
+        case .constant(let constant):
+            try env.declareConstant(
+                named: constant.name.lexeme, to: try constant.value.value(withEnv: env))
+        }
+    }
+    switch env.getVariable(named: "main")!.get()! {
+    case .function(let function):
+        _ = try function.call([], parent: env)
+    default:
+        todo()
     }
 } catch {
     guard let error = error as? Diag else {

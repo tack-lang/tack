@@ -1,3 +1,12 @@
+void compute(x: void, l: void) {
+    println(24)
+    println(25)
+}
+
 void main() {
-    println("Hello, world!")
+    compute({}, {})
+    println(5.2)
+    compute({}, {})
+    println(5.2)
+    println(3.14159265)
 }
