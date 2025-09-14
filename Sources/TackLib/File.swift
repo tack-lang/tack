@@ -1,17 +1,17 @@
 import Foundation
 
-struct File {
+public struct File {
     let source: String
     let path: URL
     let ogPath: String?
 
-    init(path: String) throws {
-        self.path = URL(fileURLWithPath: filePath)
+    public init(path: String) throws {
+        self.path = URL(fileURLWithPath: path)
         ogPath = path
         source = try String(contentsOf: self.path, encoding: .utf8)
     }
 
-    func getPath() -> String {
+    public func getPath() -> String {
         if let str = ogPath {
             str
         } else {

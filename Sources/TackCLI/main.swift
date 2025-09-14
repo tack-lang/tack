@@ -2,20 +2,7 @@
 // https://docs.swift.org/swift-book
 
 import Foundation
-
-func debugPrint(_ items: Any..., separator: String = " ", terminator: String = "\n") {
-    #if DEBUG
-        print(items, separator: separator, terminator: terminator)
-    #endif
-}
-
-func todo() -> Never {
-    fatalError("not yet implemented")
-}
-
-func unreachable() -> Never {
-    fatalError("unreachable code reached")
-}
+import TackLib
 
 // Check if a file path argument was provided
 guard CommandLine.arguments.count > 1 else {
@@ -43,7 +30,7 @@ do {
         to: .function(
             .native(
                 NativeFunction(
-                    code: {(args, _, _) throws -> Value in
+                    { (args, _, _) throws -> Value in
                         switch args[0].0 {
                         case .string(let str):
                             print(str)
@@ -68,7 +55,7 @@ do {
     case .function(let function):
         _ = try function.call([], parent: env, leftParen: Span())
     default:
-        todo()
+        fatalError("not yet implemented")
     }
 } catch {
     guard let error = error as? Diag else {

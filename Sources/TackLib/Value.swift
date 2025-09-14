@@ -1,4 +1,4 @@
-enum Value {
+public enum Value {
     // swiftlint:disable:next identifier_name
     case u8(UInt8)
     case u16(UInt16)
@@ -181,7 +181,7 @@ enum CoercingValue {
     case compnum(Double)
 }
 
-enum Type {
+public enum Type: Sendable {
     // swiftlint:disable:next identifier_name
     case u8
     case u16

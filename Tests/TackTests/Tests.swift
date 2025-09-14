@@ -1,5 +1,5 @@
 import Testing
-@testable import Tack
+@testable import TackLib
 
 @Test
 func addNumbers() {

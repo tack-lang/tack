@@ -1,4 +1,4 @@
-enum Function {
+public enum Function {
     var span: Span {
         switch self {
         case .tack(let funct):
@@ -11,7 +11,9 @@ enum Function {
     case tack(TackFunction)
     case native(NativeFunction)
 
-    func call(_ args: [(Value, Span)], parent env: Environment, leftParen: Span) throws -> Value {
+    public func call(_ args: [(Value, Span)], parent env: Environment, leftParen: Span) throws
+        -> Value
+    {
         switch self {
         case .tack(let funct):
             try funct.call(args, parent: env, leftParen: leftParen)
@@ -21,13 +23,15 @@ enum Function {
     }
 }
 
-struct TackFunction {
+public struct TackFunction {
     let code: Block
     let params: [(Identifier, Expression)]
     let retType: Expression
     var span: Span { Span(from: retType.span.start, to: code.span.end) }
 
-    func call(_ args: [(Value, Span)], parent env: Environment, leftParen: Span) throws -> Value {
+    public func call(_ args: [(Value, Span)], parent env: Environment, leftParen: Span) throws
+        -> Value
+    {
         var env = Environment(env)
         let diff = params.count - args.count
         switch diff {
@@ -52,6 +56,10 @@ struct TackFunction {
     }
 }
 
-struct NativeFunction {
-    let code: ([(Value, Span)], Environment, Span) throws -> Value
+public struct NativeFunction {
+    public init(_ code: @escaping ([(Value, Span)], Environment, Span) throws -> Value) {
+        self.code = code
+    }
+
+    public let code: ([(Value, Span)], Environment, Span) throws -> Value
 }

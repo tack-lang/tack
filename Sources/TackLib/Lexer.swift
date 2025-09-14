@@ -1,13 +1,13 @@
-protocol Token: CustomStringConvertible {
+public protocol Token: CustomStringConvertible {
     var span: Span { get }
     var lexeme: String { get }
 }
 
 extension Token {
-    var description: String { lexeme }
+    public var description: String { lexeme }
 }
 
-struct Lexer {
+public struct Lexer {
     var src: String.Iterator
     var file: File
     var peeked: Character??
@@ -15,7 +15,7 @@ struct Lexer {
 
     typealias Element = Token
 
-    init(src: File) {
+    public init(src: File) {
         self.src = src.source.makeIterator()
         span = Span()
         file = src

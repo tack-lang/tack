@@ -35,6 +35,24 @@
             "name": "Release Tack",
             "program": "${workspaceFolder:tack}/.build/release/Tack",
             "preLaunchTask": "swift: Build Release Tack"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:tack}",
+            "name": "Debug TackCLI",
+            "program": "${workspaceFolder:tack}/.build/debug/TackCLI",
+            "preLaunchTask": "swift: Build Debug TackCLI"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:tack}",
+            "name": "Release TackCLI",
+            "program": "${workspaceFolder:tack}/.build/release/TackCLI",
+            "preLaunchTask": "swift: Build Release TackCLI"
         }
     ]
 }

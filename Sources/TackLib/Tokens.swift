@@ -1,6 +1,6 @@
-struct Identifier: Token {
-    let span: Span
-    let lexeme: String
+public struct Identifier: Token {
+    public let span: Span
+    public let lexeme: String
     static let staticLexeme: String? = nil
 }
 

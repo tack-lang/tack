@@ -72,7 +72,7 @@ enum DiagType {
     }
 }
 
-struct Diag: Error {
+public struct Diag: Error {
     let type: DiagType
     let span: Span
     let localMsg: String?
@@ -108,7 +108,7 @@ struct Diag: Error {
     }
 }
 
-func renderError(diag: Diag, file: File) -> String {
+public func renderError(diag: Diag, file: File) -> String {
     let sourceCode = file.source
     let lines = sourceCode.components(separatedBy: .newlines)
     let (line, column) = findLineAndColumn(for: diag.span.start, in: lines)

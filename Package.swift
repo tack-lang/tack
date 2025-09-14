@@ -6,22 +6,26 @@ import PackageDescription
 let package = Package(
     name: "Tack",
     products: [
-        .executable(name: "Tack", targets: ["Tack"])
+        .executable(name: "TackCLI", targets: ["TackCLI"]),
+        .library(name: "TackLib", targets: ["TackLib"])
     ],
     dependencies: [
         .package(url: "https://github.com/onevcat/Rainbow.git", from: "4.0.0")
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
+        .target(name: "TackLib", dependencies: [
+            .product(name: "Rainbow", package: "Rainbow")
+        ]),
         .executableTarget(
-            name: "Tack",
+            name: "TackCLI",
             dependencies: [
+                "TackLib",
                 .product(name: "Rainbow", package: "Rainbow")
             ]
         ),
-        .testTarget(
-            name: "TackTests", dependencies: ["Tack"],
-            exclude: ["../../Sources/main.swift"]),
+        .testTarget(name: "TackTests", dependencies: [
+            "TackLib",
+            .product(name: "Rainbow", package: "Rainbow")
+        ])
     ]
 )

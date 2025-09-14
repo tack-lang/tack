@@ -1,4 +1,4 @@
-protocol Statement {
+public protocol Statement {
     var span: Span { get }
 
     func run(withEnv: inout Environment) throws -> Value
@@ -6,7 +6,7 @@ protocol Statement {
     func type(withEnv: Environment) -> Type?
 }
 
-protocol Expression: Statement {
+public protocol Expression: Statement {
     var span: Span { get }
 
     func value(withEnv: Environment) throws -> Value
@@ -29,12 +29,12 @@ extension Expression {
     }
 }
 
-struct Parser {
+public struct Parser {
     var lexer: Lexer
     var peeked: Token??
     var file: File
 
-    init(lexer: Lexer) {
+    public init(lexer: Lexer) {
         self.lexer = lexer
         file = lexer.file
     }
@@ -147,7 +147,7 @@ extension Parser {
         return try unwrapEof(try expression())
     }
 
-    mutating func item() throws -> Item? {
+    public mutating func item() throws -> Item? {
         guard let tok = try peekToken() else {
             return nil
         }
