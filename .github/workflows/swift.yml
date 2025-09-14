@@ -32,7 +32,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install WSL and Swift
       run: |
-        wsl --install
+        wsl --install -d Ubuntu
         wsl sh -c "sudo apt-get update && sudo apt-get install -y swift"
 
     - name: Build inside WSL
