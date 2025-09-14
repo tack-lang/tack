@@ -17,6 +17,6 @@ let package = Package(
                 .product(name: "Rainbow", package: "Rainbow")
             ]
         ),
-        .testTarget(name: "TackTest", dependencies: ["Tack"], path: "Tests/TackTests"),
+        .testTarget(name: "TackTest", dependencies: ["Tack"], path: "Tests/TackTests", exclude: ["../Sources/main.swift"]),
     ]
 )
