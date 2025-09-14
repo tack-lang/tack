@@ -29,9 +29,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: sushichop/gha-swift-env@v1.0.5
-      with:
-        swift-version: latest
+    - uses: SwiftyLab/setup-swift
     - uses: actions/checkout@v4
     - name: Build
       run: swift build -v
