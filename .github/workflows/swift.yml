@@ -10,11 +10,8 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+  build-linux:
+    runs-on: ubuntu-latest
 
     steps:
     - uses: SwiftyLab/setup-swift@v1
@@ -24,13 +21,25 @@ jobs:
     - name: Run tests
       run: swift test -v
 
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - uses: SwiftyLab/setup-swift@v1
+    - uses: actions/checkout@v4
+    - name: Build
+      run: swift build -v
+    - name: Run tests
+      run: swift test -v
   
   build-macos:
     runs-on: macos-latest
 
     steps:
       - uses: SwiftyLab/setup-swift@v1
-      - uses: m-takuma/setup-swiftlint@1.0.0
+      - uses: Homebrew/actions/setup-homebrew@main
+      - name: Install Swiftlint
+        run: brew install swiftlint
       - uses: actions/checkout@v4
       - name: Build
         run: swift build -v
