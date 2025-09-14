@@ -30,19 +30,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install WSL and Swift
-      run: |
-        wsl sh -c "sudo apt-get update && sudo apt-get install -y swift"
+    - uses: compnerd/gha-setup-swift@main
+      with:
+        swift-version: swift-6.1.2-release
+        swift-build: 6.1.2-RELEASE
 
-    - name: Build inside WSL
-      run: |
-        wsl sh -c "cd /mnt/c/Users/runneradmin/Actions-Runner/_work/tack/tack && swift build -v"
-      shell: bash
-
-    - name: Run tests inside WSL
-      run: |
-        wsl sh -c "cd /mnt/c/Users/runneradmin/Actions-Runner/_work/tack/tack && swift test -v"
-      shell: bash
+    - name: Build
+      run: swift build -v
+    - name: Run tests
+      run: swift test -v
   
   build-macos:
     runs-on: macos-latest
