@@ -20,6 +20,10 @@ jobs:
       run: swift build -v
     - name: Run tests
       run: swift test -v
+    - name: SwiftLint
+      uses: raphaelbussa/swiftlint-action@main
+      with:
+        subcommand: lint --strict
 
   build-windows:
     runs-on: windows-latest
@@ -37,14 +41,9 @@ jobs:
 
     steps:
       - uses: SwiftyLab/setup-swift@v1
-      - uses: Homebrew/actions/setup-homebrew@main
-      - name: Install Swiftlint
-        run: brew install swiftlint
       - uses: actions/checkout@v4
       - name: Build
         run: swift build -v
       - name: Run tests
         run: swift test -v
-      - name: Lint
-        run: swiftlint --strict
   
