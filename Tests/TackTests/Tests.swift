@@ -3,6 +3,6 @@ import Testing
 
 @Test
 func sanityCheck() {
-    let result = 2 + 2
-    #expect(result == 4)
+    let result = 2 + 3
+    #expect(result == 5)
 }
