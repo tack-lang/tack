@@ -16,6 +16,14 @@ jobs:
     steps:
     - uses: beeauvin/swiftly-swift@v1
     - uses: actions/checkout@v4
+    - name: Cache
+      uses: actions/cache@v4
+      with:
+        path: .build
+        key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+        restore-keys: |
+          ${{ runner.os }}-spm-
+          
     - name: Build
       run: swift build -v
     - name: Run tests
@@ -40,6 +48,13 @@ jobs:
       with:
         swift-version: swift-6.1.2-release
         swift-build: 6.1.2-RELEASE
+    - name: Cache
+      uses: actions/cache@v4
+      with:
+        path: .build
+        key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+        restore-keys: |
+          ${{ runner.os }}-spm-
 
     - name: Build
       run: swift build -v
@@ -51,6 +66,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Cache
+      uses: actions/cache@v4
+      with:
+        path: .build
+        key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+        restore-keys: |
+          ${{ runner.os }}-spm-
     - name: Build
       run: swift build -v
     - name: Run tests
