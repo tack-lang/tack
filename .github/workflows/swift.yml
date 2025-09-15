@@ -25,10 +25,15 @@ jobs:
           ${{ runner.os }}-spm-
           
     - name: Build
-      run: swift build -v
+      run: swift build -v --product TackCLI -c release
     - name: Run tests
       run: swift test --enable-swift-testing -v
-  
+    - name: Upload TackCLI Binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: TackCLI-linux
+        path: .build/release/TackCLI
+
   lint:
     runs-on: ubuntu-latest
 
@@ -57,10 +62,15 @@ jobs:
           ${{ runner.os }}-spm-
 
     - name: Build
-      run: swift build -v
+      run: swift build -v --product TackCLI -c release
     - name: Run tests
       run: swift test --enable-swift-testing -v
-  
+    - name: Upload TackCLI Binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: TackCLI-windows
+        path: .build/release/TackCLI.exe
+
   build-macos:
     runs-on: macos-latest
 
@@ -74,7 +84,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-spm-
     - name: Build
-      run: swift build -v
+      run: swift build -v --product TackCLI -c release
     - name: Run tests
       run: swift test --enable-swift-testing -v
-  
+    - name: Upload TackCLI Binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: TackCLI-macos
+        path: .build/release/TackCLI
+
