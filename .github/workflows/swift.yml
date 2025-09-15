@@ -29,7 +29,7 @@ jobs:
     - name: Run tests
       run: swift test --enable-swift-testing -v
     - name: Upload TackCLI Binary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: TackCLI-linux
         path: .build/release/TackCLI
@@ -66,7 +66,7 @@ jobs:
     - name: Run tests
       run: swift test --enable-swift-testing -v
     - name: Upload TackCLI Binary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: TackCLI-windows
         path: .build/release/TackCLI.exe
@@ -88,7 +88,7 @@ jobs:
     - name: Run tests
       run: swift test --enable-swift-testing -v
     - name: Upload TackCLI Binary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: TackCLI-macos
         path: .build/release/TackCLI
