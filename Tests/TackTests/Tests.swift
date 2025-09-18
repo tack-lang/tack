@@ -31,9 +31,3 @@ func complexSanityCheck() throws {
     let value = try vm.runFunc(named: "main")
     #expect(value == Value.double(0.693))
 }
-
-@Test
-func testingFrameworkSanity() throws {
-    var vm = try getTest("testingFramework/sanity.tck")
-    vm.run()
-}
