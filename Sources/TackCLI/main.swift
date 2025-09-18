@@ -21,7 +21,6 @@ do {
     exit(1)
 }
 
-
 do {
     let vm = try Vm(src: file)
     vm.run()

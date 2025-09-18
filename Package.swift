@@ -25,7 +25,7 @@ let package = Package(
             name: "TackCLI",
             dependencies: [
                 "TackLib",
-                .product(name: "Rainbow", package: "Rainbow"),
+                .product(name: "Rainbow", package: "Rainbow")
             ]
         ),
         .testTarget(
@@ -33,6 +33,7 @@ let package = Package(
             dependencies: [
                 "TackLib",
                 .product(name: "Rainbow", package: "Rainbow")
-            ], resources: [.copy("tests")])
+            ],
+            resources: [.copy("tests")])
     ]
 )

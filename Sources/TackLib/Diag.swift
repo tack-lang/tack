@@ -156,8 +156,9 @@ public func renderError(diag: Diag, file: File) -> String {
         let currentLineStr = String(line + 1)
         let currentPadding = currentLineStr.count + 1
 
+        let padding = String(repeating: " ", count: currentPadding - currentLineStr.count - 1)
         output +=
-            "\n\(String(repeating: " ", count: currentPadding - currentLineStr.count - 1))\(currentLineStr) | \(lineContent)"
+            "\n\(padding)\(currentLineStr) | \(lineContent)"
 
         // Create the marker for the current line
         let marker: String
