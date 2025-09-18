@@ -11,6 +11,12 @@ public struct File {
         source = try String(contentsOf: self.path, encoding: .utf8)
     }
 
+    public init(path: URL) throws {
+        self.ogPath = nil
+        self.path = path
+        source = try String(contentsOf: self.path, encoding: .utf8)
+    }
+
     public func getPath() -> String {
         if let str = ogPath {
             str

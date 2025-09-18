@@ -1,4 +1,4 @@
-public struct Span: Sendable {
+public struct Span: Sendable, Equatable {
     var start: UInt
     var end: UInt
 

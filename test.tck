@@ -1,3 +1,5 @@
+const alsoMain = main
+
 void main() {
     println(add(5, 2))
     println(2 * add(3, 3))

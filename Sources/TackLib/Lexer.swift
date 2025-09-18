@@ -11,6 +11,7 @@ public struct Lexer {
     var src: String.Iterator
     var file: File
     var peeked: Character??
+    var peeked2: Character??
     var span: Span
 
     typealias Element = Token
@@ -21,11 +22,21 @@ public struct Lexer {
         file = src
     }
 
-    mutating func skipWhitespace() {
+    mutating func skipWhitespaceAndComments() {
         while true {
             switch peekChar() {
             case let char where char?.isWhitespace == true:
                 _ = nextChar()
+            case "/":
+                let second = peekChar2()
+                if second == "/" {
+                    while peekChar() != "\n" {
+                        _ = nextChar()
+                    }
+                } else {
+                    _ = span.reset()
+                    return
+                }
             default:
                 _ = span.reset()
                 return
@@ -39,20 +50,32 @@ public struct Lexer {
 
     mutating func nextChar() -> Character? {
         span.growFront(by: 1)
-        if peeked != nil {
-            let old = peeked!
-            peeked = nil
+        if let peekedChar = peeked {
+            let old = peekedChar
+            peeked = peeked2
+            peeked2 = nil
             return old
         }
         return src.next()
     }
 
     mutating func peekChar() -> Character? {
-        if peeked != nil {
-            return peeked!
+        if let peekedChar = peeked {
+            return peekedChar
         }
         peeked = src.next()
         return peeked!
+    }
+
+    mutating func peekChar2() -> Character? {
+        if let peekedChar2 = peeked2 {
+            return peekedChar2
+        }
+        if peeked == nil {
+            peeked = src.next()
+        }
+        peeked2 = src.next()
+        return peeked2!
     }
 
     func currentSubstring() -> Substring {
@@ -60,7 +83,7 @@ public struct Lexer {
     }
 
     mutating func next() throws -> Token? {
-        skipWhitespace()
+        skipWhitespaceAndComments()
 
         if atEof() {
             return nil
@@ -83,6 +106,8 @@ public struct Lexer {
     // swiftlint:disable:next cyclomatic_complexity
     private mutating func handleSingleCharacterTokens(_ char: Character) -> Token? {
         switch char {
+        case "=":
+            return Equals(span: span.reset())
         case ":":
             return Colon(span: span.reset())
         case "(":
@@ -153,6 +178,8 @@ public struct Lexer {
         switch substr {
         case "void":
             return VoidKey(span: span.reset())
+        case "const":
+            return Const(span: span.reset())
         case "as":
             return As(span: span.reset())
         case "u8":

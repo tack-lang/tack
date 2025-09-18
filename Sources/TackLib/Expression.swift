@@ -53,12 +53,10 @@ struct Binary: Expression {
 
         let rightCoerced = right.coerce(to: left.type())
         if let right = rightCoerced {
-            print("right coerced to \(left.type())")
             return (left, right)
         }
         let leftCoerced = left.coerce(to: right.type())
         if let left = leftCoerced {
-            print("left coerced to \(right.type())")
             return (left, right)
         }
         return (left, right)
@@ -113,6 +111,14 @@ struct Addition: BinaryExpression {
             return .double(left + right)
         case (.string(let left), .string(let right)):
             return .string(left + right)
+        case (.compnum(let left), .compnum(let right)):
+            return .compnum(left + right)
+        case (.compfloat(let left), .compfloat(let right)):
+            return .compfloat(left + right)
+        case (.compint(let left), .compint(let right)):
+            return .compint(left + right)
+        case (.compuint(let left), .compuint(let right)):
+            return .compuint(left + right)
         default:
             unreachable()
         }
@@ -168,6 +174,14 @@ struct Subtraction: BinaryExpression {
             return .float(left - right)
         case (.double(let left), .double(let right)):
             return .double(left - right)
+        case (.compnum(let left), .compnum(let right)):
+            return .compnum(left - right)
+        case (.compfloat(let left), .compfloat(let right)):
+            return .compfloat(left - right)
+        case (.compint(let left), .compint(let right)):
+            return .compint(left - right)
+        case (.compuint(let left), .compuint(let right)):
+            return .compuint(left - right)
         default:
             unreachable()
         }
@@ -223,6 +237,14 @@ struct Multiplication: BinaryExpression {
             return .float(left * right)
         case (.double(let left), .double(let right)):
             return .double(left * right)
+        case (.compnum(let left), .compnum(let right)):
+            return .compnum(left * right)
+        case (.compfloat(let left), .compfloat(let right)):
+            return .compfloat(left * right)
+        case (.compint(let left), .compint(let right)):
+            return .compint(left * right)
+        case (.compuint(let left), .compuint(let right)):
+            return .compuint(left * right)
         default:
             unreachable()
         }
@@ -278,6 +300,14 @@ struct Division: BinaryExpression {
             return .float(left / right)
         case (.double(let left), .double(let right)):
             return .double(left / right)
+        case (.compnum(let left), .compnum(let right)):
+            return .compnum(left / right)
+        case (.compfloat(let left), .compfloat(let right)):
+            return .compfloat(left / right)
+        case (.compint(let left), .compint(let right)):
+            return .compint(left / right)
+        case (.compuint(let left), .compuint(let right)):
+            return .compuint(left / right)
         default:
             unreachable()
         }
@@ -357,7 +387,7 @@ struct Variable: Expression {
 
 struct Block: Expression {
     var span: Span
-    var statements: [Statement]
+    var statements: [any Statement]
 
     func value(withEnv env: Environment) throws -> Value {
         var env = env
@@ -395,7 +425,7 @@ struct Call: Expression {
             argVals.append((value, arg.span))
         }
         return try funct.call(
-            argVals, parent: env.root(), leftParen: Span(from: span.end - 1, to: span.end))
+            argVals, env: env, leftParen: Span(from: span.end - 1, to: span.end))
     }
 
     func valid(withEnv: Environment) -> Bool {
@@ -409,8 +439,8 @@ struct Call: Expression {
 }
 
 struct Coerce: Expression {
-    let left: Expression
-    let type: Expression
+    let left: any Expression
+    let type: any Expression
     let span: Span
 
     func value(withEnv env: Environment) throws -> Value {

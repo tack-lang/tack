@@ -1,4 +1,4 @@
-public enum Value {
+public enum Value: Equatable {
     // swiftlint:disable:next identifier_name
     case u8(UInt8)
     case u16(UInt16)

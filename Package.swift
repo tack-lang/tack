@@ -5,6 +5,9 @@ import PackageDescription
 
 let package = Package(
     name: "Tack",
+    platforms: [
+        .macOS(.v13)
+    ],
     products: [
         .executable(name: "TackCLI", targets: ["TackCLI"]),
         .library(name: "TackLib", targets: ["TackLib"])
@@ -13,19 +16,23 @@ let package = Package(
         .package(url: "https://github.com/onevcat/Rainbow.git", from: "4.0.0")
     ],
     targets: [
-        .target(name: "TackLib", dependencies: [
-            .product(name: "Rainbow", package: "Rainbow")
-        ]),
+        .target(
+            name: "TackLib",
+            dependencies: [
+                .product(name: "Rainbow", package: "Rainbow")
+            ]),
         .executableTarget(
             name: "TackCLI",
             dependencies: [
                 "TackLib",
-                .product(name: "Rainbow", package: "Rainbow")
+                .product(name: "Rainbow", package: "Rainbow"),
             ]
         ),
-        .testTarget(name: "TackTests", dependencies: [
-            "TackLib",
-            .product(name: "Rainbow", package: "Rainbow")
-        ])
+        .testTarget(
+            name: "TackTests",
+            dependencies: [
+                "TackLib",
+                .product(name: "Rainbow", package: "Rainbow")
+            ], resources: [.copy("tests")])
     ]
 )

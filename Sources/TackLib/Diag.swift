@@ -22,6 +22,9 @@ enum DiagType {
     case missingArgument
     case extraArgument
     case coercionFailure
+    case missingMain
+    case expectedCloseParen
+    case expectedEquals
 
     // swiftlint:disable:next cyclomatic_complexity
     func msg() -> String {
@@ -68,6 +71,12 @@ enum DiagType {
             return "extra argument"
         case .coercionFailure:
             return "failed to coerce"
+        case .missingMain:
+            return "missing main function"
+        case .expectedCloseParen:
+            return "expected closing parenthesis"
+        case .expectedEquals:
+            return "expected equals sign"
         }
     }
 }
@@ -111,42 +120,75 @@ public struct Diag: Error {
 public func renderError(diag: Diag, file: File) -> String {
     let sourceCode = file.source
     let lines = sourceCode.components(separatedBy: .newlines)
-    let (line, column) = findLineAndColumn(for: diag.span.start, in: lines)
+    let (startLine, startColumn) = findLineAndColumn(for: diag.span.start, in: lines)
+    let (endLine, endColumn) = findLineAndColumn(for: diag.span.end, in: lines)
 
-    // Check if the line exists
-    guard line < lines.count else {
+    // Check if the start and end lines exist
+    guard startLine < lines.count, endLine < lines.count else {
         return "Error: \(diag.type)\n(Line out of bounds)"
     }
 
-    let lineContent = lines[line]
-
-    // Create the visual marker
-    let markerLength = Int(diag.span.end - diag.span.start)
-    let markerPadding = String(repeating: " ", count: column)
-    let marker = markerPadding + String(repeating: "^", count: markerLength)
-
-    let lineStr = String(line + 1)
+    var output = ""
+    let lineStr = String(startLine + 1)
     let padding = lineStr.count + 1
+
     #if DEBUG
         var debug =
             "\n\(String(repeating: " ", count: padding - 1))\(diag.file):\(diag.line):\(diag.column)"
-        if #available(macOS 13.0, *) {
-            debug.replace("Tack", with: "Sources")
-        } else {
-
-        }
     #else
         let debug = ""
     #endif
 
-    // Assemble the final output
-    return """
+    output += """
         \("Error".red.bold)\(":".white.bold) \(diag.msg.white.bold)\(debug)
-        \(String(repeating: " ", count: padding - 1))--> \(file.getPath()):\(lineStr):\(column)
-        \(String(repeating: " ", count: padding))|
-        \(String(repeating: " ", count: padding - lineStr.count - 1))\(lineStr) | \(lineContent)
-        \(String(repeating: " ", count: padding))| \(marker.red.bold) \((diag.localMsg ?? "").red.bold)
+        \(String(repeating: " ", count: padding - 1))--> \(file.getPath()):\(startLine + 1):\(startColumn + 1)
         """
+
+    // Iterate through the lines covered by the span
+    for line in startLine...endLine {
+        let lineContent = lines[line]
+
+        // Skip empty or whitespace-only lines
+        if lineContent.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            continue
+        }
+
+        let currentLineStr = String(line + 1)
+        let currentPadding = currentLineStr.count + 1
+
+        output +=
+            "\n\(String(repeating: " ", count: currentPadding - currentLineStr.count - 1))\(currentLineStr) | \(lineContent)"
+
+        // Create the marker for the current line
+        let marker: String
+        if line == startLine && line == endLine {
+            // Single-line span
+            let markerPadding = String(repeating: " ", count: startColumn)
+            let markerLength = Int(diag.span.end - diag.span.start)
+            marker = markerPadding + String(repeating: "^", count: markerLength)
+        } else if line == startLine {
+            // First line of a multi-line span
+            let markerPadding = String(repeating: " ", count: startColumn)
+            let markerLength = lineContent.count - startColumn
+            marker = markerPadding + String(repeating: "^", count: markerLength)
+        } else if line == endLine {
+            // Last line of a multi-line span
+            let markerLength = endColumn
+            marker = String(repeating: "^", count: markerLength)
+        } else {
+            // Middle lines of a multi-line span
+            marker = String(repeating: "^", count: lineContent.count)
+        }
+
+        output += "\n\(String(repeating: " ", count: currentPadding))| \(marker.red.bold)"
+    }
+
+    // Add the local message if available
+    if let localMsg = diag.localMsg {
+        output += " \(localMsg.red.bold)"
+    }
+
+    return output
 }
 
 // A helper function to find the line and column number

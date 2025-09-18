@@ -97,11 +97,23 @@ struct Slash: Token {
     var lexeme: String { "/" }
 }
 
+struct Equals: Token {
+    let span: Span
+
+    var lexeme: String { "=" }
+}
+
 // Keywords
 struct VoidKey: Token {
     let span: Span
 
     var lexeme: String { "void" }
+}
+
+struct Const: Token {
+    let span: Span
+
+    var lexeme: String { "const" }
 }
 
 // swiftlint:disable:next type_name

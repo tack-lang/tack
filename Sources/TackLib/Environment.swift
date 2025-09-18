@@ -15,17 +15,21 @@ enum VariableError: Error {
 public struct RuntimeVariable {
     let constant: Bool
     let type: Type
-    var value: Value?
+    var value: (Value, Span)?
 
-    public mutating func set(to value: Value) throws {
+    public mutating func set(to value: Value, at span: Span) throws {
         guard value.type() == type else {
             throw VariableError.wrongType(tried: value.type(), actual: type)
         }
-        self.value = value
+        self.value = (value, span)
     }
 
     public func get() -> Value? {
-        value
+        value?.0
+    }
+
+    public func at() -> Span? {
+        value?.1
     }
 
     public func isInitialized() -> Bool {
@@ -61,11 +65,11 @@ public struct Environment {
         return true
     }
 
-    public mutating func declareConstant(named name: String, to value: Value) throws {
+    public mutating func declareConstant(named name: String, to value: Value, at span: Span) throws {
         guard variables[name] == nil else {
             throw VariableError.alreadyExists(name: name)
         }
-        variables[name] = RuntimeVariable(constant: true, type: value.type(), value: value)
+        variables[name] = RuntimeVariable(constant: true, type: value.type(), value: (value, span))
     }
 
     public mutating func declareVariable(named name: String, as type: Type) throws {
@@ -75,13 +79,13 @@ public struct Environment {
         variables[name] = RuntimeVariable(constant: false, type: type)
     }
 
-    public mutating func setVariable(named name: String, to value: Value) throws {
+    public mutating func setVariable(named name: String, to value: Value, at span: Span) throws {
         guard variables[name] != nil else {
-            guard try parent?.setVariable(named: name, to: value) != nil else {
+            guard try parent?.setVariable(named: name, to: value, at: span) != nil else {
                 throw VariableError.doesntExist(name: name)
             }
             return
         }
-        try variables[name]!.set(to: value)
+        try variables[name]!.set(to: value, at: span)
     }
 }

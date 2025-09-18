@@ -153,6 +153,17 @@ extension Parser {
         }
 
         switch tok {
+        case is Const:
+            _ = try nextToken()
+            let ident = try identifier()
+            let tok = try unwrapEof(try nextToken())
+            guard tok is Equals else {
+                throw Diag(
+                    type: .expectedEquals, span: tok.span, msg: "expected equals, found '\(tok)'")
+            }
+            let expr = try unwrapEof(try expression())
+            return .constant(
+                Constant(name: ident, value: expr))
         default:
             let (ident, funct) = try unwrapEof(try funct())
             return .constant(
@@ -278,6 +289,15 @@ extension Parser {
         case is OpenBrace:
             let block = try unwrapEof(try block())
             return block
+        case is OpenParen:
+            _ = try nextToken()  // Consume OpenParen
+            let expr = try unwrapEof(try expression())
+            let tok = try unwrapEof(try nextToken())
+            guard tok is CloseParen else {
+                throw Diag(
+                    type: .expectedCloseParen, span: tok.span, msg: "expected closing parenthesis")
+            }
+            return expr
         default:
             return try unwrapEof(try literal())
         }

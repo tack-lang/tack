@@ -21,47 +21,13 @@ do {
     exit(1)
 }
 
-var lexer = Lexer(src: file)
-var parser = Parser(lexer: lexer)
+
 do {
-    var env = Environment()
-    try env.declareConstant(
-        named: "println",
-        to: .function(
-            .native(
-                NativeFunction(
-                    { (args, _, _) throws -> Value in
-                        switch args[0].0 {
-                        case .string(let str):
-                            print(str)
-                        case .double(let num):
-                            print(num)
-                        default:
-                            print(args[0].0)
-                        }
-                        return .void
-                    }))))
-
-    var items: [Item] = []
-    while let item = try parser.item() {
-        items.append(item)
-        switch item {
-        case .constant(let constant):
-            try env.declareConstant(
-                named: constant.name.lexeme, to: try constant.value.value(withEnv: env))
-        }
-    }
-    switch env.getVariable(named: "main")!.get()! {
-    case .function(let function):
-        _ = try function.call([], parent: env, leftParen: Span())
-    default:
-        fatalError("not yet implemented")
-    }
+    let vm = try Vm(src: file)
+    vm.run()
 } catch {
-    guard let error = error as? Diag else {
-        // Crash program if unknown error
-        throw error
+    guard let diag = error as? Diag else {
+        fatalError("unknown error \(error)")
     }
-
-    print("\(renderError(diag: error, file: file))")
+    print(renderError(diag: diag, file: file))
 }

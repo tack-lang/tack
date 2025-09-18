@@ -4,5 +4,5 @@ public enum Item {
 
 public struct Constant {
     public let name: Identifier
-    public let value: Expression
+    public let value: any Expression
 }
