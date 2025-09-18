@@ -117,6 +117,7 @@ public struct Diag: Error {
     }
 }
 
+// swiftlint:disable:next function_body_length
 public func renderError(diag: Diag, file: File) -> String {
     let sourceCode = file.source
     let lines = sourceCode.components(separatedBy: .newlines)
